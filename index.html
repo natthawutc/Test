@@ -156,13 +156,179 @@
         <div class="w-full mt-2 mb-6">
             <h3 class="font-bold text-gray-800 mb-4 px-2 text-lg">ของรางวัลที่แลกได้</h3>
             <div id="rewards-container" class="grid grid-cols-2 gap-4">
-                <!-- ข้อมูลการ์ดของรางวัลจะมาแสดงตรงนี้ -->
-                <div class="col-span-2 text-center text-sm text-gray-400 py-8 bg-white rounded-2xl border border-gray-100 flex flex-col items-center justify-center">
-                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <!-- ข้อมูลการ์ดของรางวัล -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 2.1 หน้า รางวัลของฉัน (แบบมี Tab ใช้งานได้ / ใช้แล้ว / หมดอายุ) -->
+    <div id="rewards-page" class="w-full max-w-md hidden opacity-0 transition-opacity duration-300 flex flex-col h-[calc(100vh-6rem)]">
+        <h2 class="text-2xl font-bold text-gray-800 mb-3 px-2 flex-shrink-0">รางวัลของฉัน</h2>
+        
+        <!-- แถบเมนูสถานะ (ด้านบน) -->
+        <div class="flex bg-gray-200/60 p-1 rounded-xl mb-4 mx-2 flex-shrink-0">
+            <button id="tab-btn-available" onclick="switchMyRewardTab('available')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow-sm text-blue-800 transition-all">
+                ใช้งานได้
+            </button>
+            <button id="tab-btn-used" onclick="switchMyRewardTab('used')" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                ใช้แล้ว
+            </button>
+            <button id="tab-btn-expired" onclick="switchMyRewardTab('expired')" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                หมดอายุ
+            </button>
+        </div>
+
+        <!-- พื้นที่แสดงการ์ด (สามารถ Scroll ได้เมื่อล้นจอ) -->
+        <div class="flex-1 overflow-y-auto hide-scroll px-1 pb-6">
+            <div id="my-rewards-available-container" class="flex flex-col gap-3"></div>
+            <div id="my-rewards-used-container" class="flex flex-col gap-3 hidden"></div>
+            <div id="my-rewards-expired-container" class="flex flex-col gap-3 hidden"></div>
+        </div>
+    </div>
+
+    <!-- 2.2 หน้า เมนู -->
+    <div id="menu-page" class="w-full max-w-md hidden opacity-0 transition-opacity duration-300">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 px-2">เมนู</h2>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <button onclick="showComingSoon()" class="w-full text-left px-5 py-4 text-gray-700 hover:bg-gray-50 transition-colors font-bold flex items-center gap-3 border-b border-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                แนะนำคุณภาพสินค้าและบริการ
+            </button>
+            <button onclick="openChangePwdModal()" class="w-full text-left px-5 py-4 text-gray-700 hover:bg-gray-50 transition-colors font-bold flex items-center gap-3 border-b border-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                เปลี่ยนรหัสผ่าน
+            </button>
+            <button onclick="logout()" class="w-full text-left px-5 py-4 text-red-500 hover:bg-red-50 transition-colors font-bold flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                ออกจากระบบ
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. Modal QR Code หลัก (ใช้รับแต้ม) -->
+    <div id="qr-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-70 transition-opacity">
+        <div class="bg-white rounded-3xl p-8 w-11/12 max-w-sm text-center shadow-2xl relative">
+            <button onclick="closeQRModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h3 class="text-xl font-bold text-blue-900 mb-6">คิวอาร์โคดเพื่อรับแต้ม</h3>
+            <div class="flex justify-center mb-6">
+                <div id="qrcode" class="p-4 bg-white rounded-xl shadow-inner border-2 border-gray-100"></div>
+            </div>
+            <p class="text-sm text-gray-600 bg-gray-100 p-3 rounded-lg font-medium">
+            แสดงคิวอาร์โคดนี้ให้กับพนักงานขายเพื่อรับแต้ม
+            </p>
+        </div>
+    </div>
+
+    <!-- 3.1 หน้าต่างรายละเอียดของรางวัล (แลกแต้ม) -->
+    <div id="reward-detail-modal" class="fixed inset-0 z-50 hidden bg-white flex flex-col transition-transform transform translate-x-full duration-300 max-w-md mx-auto shadow-2xl">
+        <div class="px-4 py-3 flex items-center border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm">
+            <button onclick="closeRewardDetail()" class="text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h2 class="ml-2 font-bold text-lg text-gray-800">รายละเอียดของรางวัล</h2>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto pb-24 hide-scroll">
+            <div class="w-full aspect-square bg-gray-50">
+                <img id="detail-image" src="" alt="Reward Image" class="w-full h-full object-cover">
+            </div>
+            <div class="p-5">
+                <h3 id="detail-name" class="text-xl font-bold text-gray-900 mb-3 leading-snug"></h3>
+                <div class="inline-flex items-center bg-blue-50 text-blue-700 font-bold px-3 py-1.5 rounded-lg text-sm border border-blue-100 mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
                     </svg>
-                    กำลังโหลดของรางวัล...
+                    ใช้ <span id="detail-points" class="mx-1"></span> แต้ม
+                </div>
+                <h4 class="font-bold text-gray-800 mb-2">เงื่อนไขการแลกของรางวัล</h4>
+                <p id="detail-condition" class="text-gray-600 text-sm whitespace-pre-wrap leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100"></p>
+            </div>
+        </div>
+
+        <div class="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-gray-100 z-10 max-w-md mx-auto left-1/2 transform -translate-x-1/2">
+             <button onclick="openConfirmModal()" class="w-full bg-blue-800 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition-colors">
+                แลกของรางวัล
+             </button>
+        </div>
+    </div>
+
+    <!-- 3.2 ป๊อปอัพยืนยันการแลก -->
+    <div id="confirm-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black bg-opacity-60 transition-opacity">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm text-center shadow-2xl relative transform scale-100">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">แลกของรางวัลชิ้นนี้หรือไม่?</h3>
+            <p id="confirm-text" class="text-sm text-gray-500 mb-6 leading-relaxed"></p>
+            
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                <button id="btn-confirm-redeem" onclick="processRedeem()" class="flex-1 bg-blue-800 text-white font-bold py-3 rounded-xl hover:bg-blue-900 transition-colors flex justify-center items-center">
+                    <span id="txt-confirm-redeem">ยืนยัน</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3.3 หน้าต่างรายละเอียด "รางวัลของฉัน" (My Reward Detail Modal) -->
+    <div id="my-reward-detail-modal" class="fixed inset-0 z-[60] hidden bg-white flex flex-col transition-transform transform translate-x-full duration-300 max-w-md mx-auto shadow-2xl">
+        <div class="px-4 py-3 flex items-center border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm">
+            <button onclick="closeMyRewardDetail()" class="text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h2 class="ml-2 font-bold text-lg text-gray-800">รายละเอียดคูปอง</h2>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto pb-6 hide-scroll">
+            <div class="p-6 flex flex-col items-center">
+                <h3 id="my-detail-name" class="text-xl font-bold text-gray-900 mb-4 text-center leading-snug"></h3>
+                
+                <div class="w-full bg-blue-50 rounded-2xl p-5 mb-6 border border-blue-100 shadow-inner text-center relative overflow-hidden">
+                    <div id="my-detail-used-overlay" class="hidden absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-10">
+                        <div class="border-4 border-red-500 text-red-500 font-bold text-xl px-4 py-2 transform -rotate-12 rounded-lg opacity-80">ใช้แล้ว</div>
+                    </div>
+                    <div id="my-detail-expired-overlay" class="hidden absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-10">
+                        <div class="border-4 border-gray-500 text-gray-500 font-bold text-xl px-4 py-2 transform -rotate-12 rounded-lg opacity-80">หมดอายุ</div>
+                    </div>
+                    <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">รหัสคูปอง</p>
+                    <p id="my-detail-coupon" class="text-2xl font-mono font-bold text-blue-900 tracking-widest break-all"></p>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex justify-center w-full max-w-[240px] relative">
+                    <div id="my-qrcode"></div>
+                </div>
+
+                <div class="w-full space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">แต้มที่ใช้แลก:</span>
+                        <span id="my-detail-points" class="font-bold text-gray-800"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">วันที่แลก:</span>
+                        <span id="my-detail-redeem" class="font-medium text-gray-800"></span>
+                    </div>
+                    <div id="my-detail-used-container" class="hidden flex justify-between pt-3 border-t border-gray-200">
+                        <span class="text-gray-500 font-bold">วันที่รับรางวัล:</span>
+                        <span id="my-detail-used-date" class="font-bold text-gray-800"></span>
+                    </div>
+                    <div id="my-detail-expire-container" class="flex justify-between pt-3 border-t border-gray-200">
+                        <span class="text-red-500 font-bold">วันหมดอายุ:</span>
+                        <span id="my-detail-expire" class="font-bold text-red-600"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -194,13 +360,13 @@
                            class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-left text-lg tracking-widest font-mono font-bold"
                            placeholder="ตั้งรหัสผ่านใหม่">
                 </div>
-        <!-- พื้นที่แสดงการ์ด (สามารถ Scroll ได้เมื่อล้นจอ) -->
-        <div class="flex-1 overflow-y-auto hide-scroll px-1 pb-6">
-            <div id="my-rewards-available-container" class="flex flex-col gap-3">
-                <div class="text-center text-sm text-gray-400 py-8">กำลังโหลดข้อมูลคูปอง...</div>
             </div>
-            <div id="my-rewards-used-container" class="flex flex-col gap-3 hidden"></div>
-            <div id="my-rewards-expired-container" class="flex flex-col gap-3 hidden"></div>
+        </div>
+
+        <div class="p-4 bg-white border-t border-gray-100 mt-auto">
+             <button onclick="openConfirmPwd()" class="w-full bg-blue-800 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition-colors">
+                ยืนยันการเปลี่ยนรหัสผ่าน
+             </button>
         </div>
     </div>
 
@@ -384,7 +550,7 @@
                 
                 if (response.success) {
                     progLabel.innerText = 'เสร็จสมบูรณ์!';
-                    progBar.style.transitionDuration = '100ms'; 
+                    progBar.style.transitionDuration = '300ms'; 
                     progBar.style.width = '100%'; 
                     progText.innerText = '100%';
                 } else {
@@ -398,7 +564,6 @@
 
             currentUser = response;
             
-            // อัปเดตข้อมูลผู้ใช้พื้นฐาน
             let cleanPoints = String(response.points || '0').replace(/,/g, '');
             let parsedPoints = parseFloat(cleanPoints);
             document.getElementById('disp-points').innerText = isNaN(parsedPoints) ? '0' : parsedPoints.toLocaleString('en-US');
@@ -414,96 +579,94 @@
             if (response.accumulatedVolume !== undefined && response.accumulatedVolume !== null && String(response.accumulatedVolume).trim() !== '') {
                 let cleanVolume = String(response.accumulatedVolume).replace(/,/g, '');
                 let parsedVol = parseFloat(cleanVolume);
-                volumeDisplay = !isNaN(parsedVol) ? parsedVol.toLocaleString('en-US') : response.accumulatedVolume; 
+                
+                if (!isNaN(parsedVol)) {
+                    volumeDisplay = parsedVol.toLocaleString('en-US');
+                } else {
+                    volumeDisplay = response.accumulatedVolume; 
+                }
             }
             document.getElementById('disp-volume').innerText = volumeDisplay;
 
-            // อัปเดตสีเลเวล
             const lvlBadge = document.getElementById('disp-level');
+            // อัปเดตสีเลเวลให้ตรงตามโจทย์: เริ่มต้น เงิน ทอง ทับทิม เพชร
             const levelColors = [
-                'linear-gradient(to right, #6b7280, #374151)', // เริ่มต้น
-                'linear-gradient(to right, #9ca3af, #d1d5db)', // เงิน
-                'linear-gradient(to right, #fbbf24, #d97706)', // ทอง
-                'linear-gradient(to right, #ef4444, #991b1b)', // ทับทิม
-                'linear-gradient(to right, #06b6d4, #0369a1)', // เพชร
+                'linear-gradient(to right, #6b7280, #374151)', // 0: เริ่มต้น (Dark Gray)
+                'linear-gradient(to right, #9ca3af, #d1d5db)', // 1: เงิน (Silver)
+                'linear-gradient(to right, #fbbf24, #d97706)', // 2: ทอง (Gold)
+                'linear-gradient(to right, #ef4444, #991b1b)', // 3: ทับทิม (Ruby/Red)
+                'linear-gradient(to right, #06b6d4, #0369a1)', // 4: เพชร (Diamond/Cyan-Blue)
             ];
             const knownLevels = { 'เริ่มต้น': 0, 'เงิน': 1, 'ทอง': 2, 'ทับทิม': 3, 'เพชร': 4 };
-            let colorIndex = knownLevels[response.level] !== undefined ? knownLevels[response.level] : 0;
+            let colorIndex = 0;
+            
+            if (response.level && knownLevels[response.level] !== undefined) {
+                colorIndex = knownLevels[response.level];
+            } else if (response.level) {
+                let hash = 0;
+                for (let i = 0; i < response.level.length; i++) hash = response.level.charCodeAt(i) + ((hash << 5) - hash);
+                colorIndex = Math.abs(hash) % levelColors.length;
+            }
             lvlBadge.style.background = levelColors[colorIndex];
 
-            // ถ้าระบบเข้าสู่ระบบสำเร็จ ให้เข้าหน้าหลักทันที
+            const rewardsContainer = document.getElementById('rewards-container');
+            if (rewardsContainer) {
+                rewardsContainer.innerHTML = '';
+                if (response.rewards && response.rewards.length > 0) {
+                    availableRewardsList = response.rewards; 
+                    response.rewards.forEach((reward, index) => {
+                        // ปรับการแสดงผลการ์ด ให้แสดงแต้ม (และสามารถโชว์ป้ายเลเวลขั้นต่ำได้ ถ้าต้องการ)
+                        const card = `
+                        <div onclick="openRewardDetail(${index})" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer">
+                            <div class="aspect-square bg-gray-50 relative border-b border-gray-100">
+                                <img src="${reward.image}" alt="${reward.name}" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
+                                <div class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
+                                    ระดับ: ${reward.minLevel}
+                                </div>
+                            </div>
+                            <div class="p-3 flex-1 flex flex-col justify-between">
+                                <h4 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 leading-snug">${reward.name}</h4>
+                                <div class="flex items-center mt-auto">
+                                    <div class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1.5 rounded-lg w-full text-center border border-blue-100">
+                                        ใช้ ${Number(reward.points).toLocaleString()} แต้ม
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                        rewardsContainer.insertAdjacentHTML('beforeend', card);
+                    });
+                } else {
+                    rewardsContainer.innerHTML = '<div class="col-span-2 text-center text-sm text-gray-500 py-8 bg-white rounded-2xl border border-gray-100">ไม่มีของรางวัลที่ท่านสามารถแลกได้ในขณะนี้</div>';
+                }
+            }
+
+            myAvailableRewards = [];
+            myUsedRewards = [];
+            myExpiredRewards = [];
+            
+            if (response.myRewards && response.myRewards.length > 0) {
+                myAvailableRewards = response.myRewards.filter(r => r.status === '0');
+                myUsedRewards = response.myRewards.filter(r => r.status === '1');
+                myExpiredRewards = response.myRewards.filter(r => r.status === '2');
+
+                myAvailableRewards.sort((a, b) => {
+                    if (a.rawExpireDate === b.rawExpireDate) return b.points - a.points;
+                    return a.rawExpireDate - b.rawExpireDate;
+                });
+                myUsedRewards.sort((a, b) => b.points - a.points);
+                myExpiredRewards.sort((a, b) => b.points - a.points);
+            }
+
+            renderMyRewards(); 
+
             if (!isSilent) {
                 setTimeout(() => {
                     document.getElementById('login-section').classList.add('hidden');
                     document.getElementById('bottom-nav').classList.remove('hidden');
                     switchTab('home');
                     switchMyRewardTab('available'); 
-                }, 150); 
+                }, 400); 
             }
-
-            // สั่งโหลดของรางวัลเบื้องหลัง แบบ Asynchronous (Lazy Load)
-            fetchAvailableRewardsAsync(response.level);
-            fetchMyRewardsAsync(response.customerId);
-        }
-
-        // ฟังก์ชันใหม่: ดึงของรางวัลที่แลกได้
-        function fetchAvailableRewardsAsync(levelName) {
-            callGasApi('getAvailableRewards', { level: levelName })
-                .then(res => {
-                    const rewardsContainer = document.getElementById('rewards-container');
-                    if (res.success && res.rewards && res.rewards.length > 0) {
-                        availableRewardsList = res.rewards;
-                        rewardsContainer.innerHTML = ''; // เคลียร์ข้อความกำลังโหลด
-                        res.rewards.forEach((reward, index) => {
-                            const card = `
-                            <div onclick="openRewardDetail(${index})" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer">
-                                <div class="aspect-square bg-gray-50 relative border-b border-gray-100">
-                                    <img src="${reward.image}" alt="${reward.name}" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
-                                    <div class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
-                                        ระดับ: ${reward.minLevel}
-                                    </div>
-                                </div>
-                                <div class="p-3 flex-1 flex flex-col justify-between">
-                                    <h4 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 leading-snug">${reward.name}</h4>
-                                    <div class="flex items-center mt-auto">
-                                        <div class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1.5 rounded-lg w-full text-center border border-blue-100">
-                                            ใช้ ${Number(reward.points).toLocaleString()} แต้ม
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>`;
-                            rewardsContainer.insertAdjacentHTML('beforeend', card);
-                        });
-                    } else {
-                        rewardsContainer.innerHTML = '<div class="col-span-2 text-center text-sm text-gray-500 py-8 bg-white rounded-2xl border border-gray-100">ไม่มีของรางวัลที่ท่านสามารถแลกได้ในขณะนี้</div>';
-                    }
-                })
-                .catch(err => console.error("Failed to fetch available rewards", err));
-        }
-
-        // ฟังก์ชันใหม่: ดึงคูปองของฉัน
-        function fetchMyRewardsAsync(customerId) {
-            callGasApi('getMyRewards', { customerId: customerId })
-                .then(res => {
-                    myAvailableRewards = [];
-                    myUsedRewards = [];
-                    myExpiredRewards = [];
-                    
-                    if (res.success && res.myRewards && res.myRewards.length > 0) {
-                        myAvailableRewards = res.myRewards.filter(r => r.status === '0');
-                        myUsedRewards = res.myRewards.filter(r => r.status === '1');
-                        myExpiredRewards = res.myRewards.filter(r => r.status === '2');
-
-                        myAvailableRewards.sort((a, b) => {
-                            if (a.rawExpireDate === b.rawExpireDate) return b.points - a.points;
-                            return a.rawExpireDate - b.rawExpireDate;
-                        });
-                        myUsedRewards.sort((a, b) => b.points - a.points);
-                        myExpiredRewards.sort((a, b) => b.points - a.points);
-                    }
-                    renderMyRewards(); 
-                })
-                .catch(err => console.error("Failed to fetch my rewards", err));
         }
 
         function renderMyRewards() {
