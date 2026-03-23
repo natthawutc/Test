@@ -2,7 +2,7 @@
 const SPREADSHEET_ID = '1L6TmseqPMRBdG5hP9WvK0xZ-pgvRmwBJYVFNispHEU4';
 
 // กำหนดเวอร์ชันของแอปพลิเคชัน
-const APP_VERSION = "Version 1.0.0";
+const APP_VERSION = "Version 1.0.1";
 
 // =========================================================================
 // 1. ฟังก์ชันหลักสำหรับรับ Request แบบ POST จาก Frontend (Github Pages)
@@ -123,22 +123,47 @@ function loginUser(phone, password) {
       return { success: false, message: 'เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง' };
     }
 
+    // กำหนดลำดับชั้นของเลเวลเพื่อใช้เปรียบเทียบ
+    const levelHierarchy = {
+      'เริ่มต้น': 0,
+      'เงิน': 1,
+      'ทอง': 2,
+      'ทับทิม': 3,
+      'เพชร': 4
+    };
+
+    // หาระดับเลเวลของลูกค้าปัจจุบัน (ถ้าไม่มีให้ถือว่าเป็น 0 'เริ่มต้น')
+    let userLevelName = String(userData.level).trim();
+    let userLevelValue = levelHierarchy[userLevelName] !== undefined ? levelHierarchy[userLevelName] : 0;
+
     // --- 1. ดึงข้อมูลของรางวัลที่แลกได้ ---
     const promoSheet = ss.getSheetByName('จัดการโปรโมชัน');
     let rewards = [];
     if (promoSheet) {
       const lastRow = promoSheet.getLastRow();
       if (lastRow >= 2) {
+        // ดึง A2:H (8 คอลัมน์)
         const promoData = promoSheet.getRange(2, 1, lastRow - 1, 8).getValues();
         for (let j = 0; j < promoData.length; j++) {
+          
+          // เช็คเงื่อนไข: ชื่อของรางวัลต้องไม่ว่างเปล่า และ คอลัมน์ G (index 6) ต้องเป็น TRUE
           if (promoData[j][0] && promoData[j][6] === true) {
-            rewards.push({
-              name: promoData[j][0],                             
-              image: getDriveImageUrl(promoData[j][1]),          
-              condition: promoData[j][2] || '-',                 
-              points: promoData[j][3],
-              rewardCode: promoData[j][7] || '' 
-            });
+            
+            // หาเลเวลขั้นต่ำของรางวัล จากคอลัมน์ E (index 4)
+            let requiredLevelName = String(promoData[j][4] || 'เริ่มต้น').trim();
+            let requiredLevelValue = levelHierarchy[requiredLevelName] !== undefined ? levelHierarchy[requiredLevelName] : 0;
+
+            // ตรวจสอบว่าเลเวลลูกค้า ถึง เลเวลขั้นต่ำของรางวัลหรือไม่
+            if (userLevelValue >= requiredLevelValue) {
+              rewards.push({
+                name: promoData[j][0],                             
+                image: getDriveImageUrl(promoData[j][1]),          
+                condition: promoData[j][2] || '-',                 
+                points: promoData[j][3],
+                minLevel: requiredLevelName, // เผื่อส่งไปแสดงที่ frontend
+                rewardCode: promoData[j][7] || '' 
+              });
+            }
           }
         }
       }
