@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- ======================================================== -->
+    <!-- ⚙️ ตั้งค่าส่วนที่ 1: ชื่อหน้าเว็บและไอคอน (Favicon)            -->
+    <!-- ======================================================== -->
+    <title>ระบบสมาชิก จุลไหมไทย</title>
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/0NP9YsLz/Logo-CTS.png">
+    <!-- ======================================================== -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=K2D:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'K2D', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .card-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .level-badge {
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* ปรับ Transition ให้เนียนขึ้นสำหรับหลอดโหลด */
+        .progress-smooth {
+            transition: width 50ms linear;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start pt-8 px-4 pb-24">
+
+    <!-- Modal แจ้งเตือน -->
+    <div id="msg-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black bg-opacity-50 transition-opacity">
+        <div class="bg-white rounded-2xl p-6 w-80 text-center shadow-xl transform scale-100">
+            <h3 id="msg-title" class="text-lg font-bold mb-2">แจ้งเตือน</h3>
+            <p id="msg-text" class="text-gray-600 mb-6 whitespace-pre-wrap"></p>
+            <button onclick="closeMsg()" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-xl hover:bg-blue-700 transition">ตกลง</button>
+        </div>
+    </div>
+
+    <!-- 1. หน้าเข้าสู่ระบบ -->
+    <div id="login-section" class="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 transition-all duration-500">
+        <div class="text-center mb-8">
+            <img src="https://drive.google.com/thumbnail?id=1mqBzzmA7Ov-OFfvk2lwaFtSzWmKtqc61&sz=w500" 
+                 alt="จุลไหมไทย โลโก้" 
+                 class="w-32 h-32 mx-auto object-contain mb-4 drop-shadow-md"
+                 onerror="this.src='https://placehold.co/150x150/e2e8f0/475569?text=Logo'">
+            <h1 class="text-2xl font-bold text-gray-800 tracking-wide">ระบบสมาชิก</h1>
+            <h2 class="text-xl font-medium text-blue-800">จุลไหมไทย</h2>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label for="inputPhone" class="block text-sm font-semibold text-gray-700 mb-2">เบอร์โทรศัพท์</label>
+                <input type="tel" id="inputPhone" maxlength="10" 
+                       class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-left text-xl tracking-widest font-bold"
+                       placeholder="08XXXXXXXX"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </div>
+
+            <div>
+                <label for="inputPassword" class="block text-sm font-semibold text-gray-700 mb-2">รหัสผ่าน</label>
+                <div class="relative">
+                    <input type="password" id="inputPassword" 
+                           class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-left text-xl tracking-widest font-bold pr-12"
+                           placeholder="••••••••">
+                    <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
+                        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <button type="button" onclick="showMsg('ลืมรหัสผ่าน', 'ติดต่อแอดมินผ่าน LINE')" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">ลืมรหัสผ่าน?</button>
+            </div>
+
+            <div id="progress-container" class="hidden w-full mt-2">
+                <div class="flex justify-between text-xs font-semibold text-blue-800 mb-1">
+                    <span id="progress-label">สถานะข้อมูล...</span>
+                    <span id="progress-text">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full progress-smooth" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <button id="loginBtn" onclick="processLogin(false)" 
+                    class="w-full mt-2 bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                <span id="btnText">เข้าสู่ระบบ</span>
+            </button>
+        </div>
+        
+        <div id="app-version-display" class="mt-8 text-center text-xs text-gray-400">
+            กำลังตรวจสอบเวอร์ชัน...
+        </div>
+    </div>
+
+    <!-- 2. หน้าหลัก -->
+    <div id="home-section" class="w-full max-w-md hidden opacity-0 transition-opacity duration-500">
+        
+        <div class="card-bg rounded-3xl p-6 relative overflow-hidden mb-6">
+            <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
+            <div class="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
+            
+            <div class="relative z-10">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-blue-100 text-sm font-medium">แต้มปัจจุบัน</p>
+                        <h2 id="disp-points" class="text-5xl font-bold tracking-tight mt-1">0</h2>
+                    </div>
+                    <div id="disp-level" class="level-badge px-3 py-1 rounded-full text-sm font-bold shadow-md">
+                        เริ่มต้น
+                    </div>
+                </div>
+
+                <div class="mb-4 bg-white/10 rounded-xl p-3 border border-white/20 backdrop-blur-sm">
+                    <p id="disp-volume-label" class="text-blue-100 text-xs font-medium">ปริมาณสะสมปี พ.ศ. ....</p>
+                    <h3 id="disp-volume" class="text-2xl font-bold text-white mt-0.5 tracking-wide">0</h3>
+                </div>
+
+                <div class="mt-4 border-t border-blue-400/30 pt-4">
+                    <p class="text-blue-200 text-xs uppercase tracking-wider mb-1">รหัสลูกค้า / ชื่อลูกค้า</p>
+                    <div class="flex justify-between items-end mt-1">
+                        <p id="disp-id" class="font-mono text-xl text-yellow-300 font-bold tracking-widest">XXXXXXX</p>
+                        <p id="disp-name" class="font-semibold text-lg text-right truncate pl-4">ชื่อ-นามสกุล</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="showQRModal()" 
+                class="hidden w-full bg-white text-blue-800 border-2 border-blue-800 hover:bg-blue-50 font-bold py-4 rounded-2xl shadow-sm transition-all flex justify-center items-center gap-2 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            </svg>
+            รับแต้ม
+        </button>
+
+        <div class="w-full mt-2 mb-6">
+            <h3 class="font-bold text-gray-800 mb-4 px-2 text-lg">ของรางวัลที่แลกได้</h3>
+            <div id="rewards-container" class="grid grid-cols-2 gap-4">
+                <!-- ข้อมูลการ์ดของรางวัล -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 2.1 หน้า รางวัลของฉัน (แบบมี Tab ใช้งานได้ / ใช้แล้ว / หมดอายุ) -->
+    <div id="rewards-page" class="w-full max-w-md hidden opacity-0 transition-opacity duration-300 flex flex-col h-[calc(100vh-6rem)]">
+        <h2 class="text-2xl font-bold text-gray-800 mb-3 px-2 flex-shrink-0">รางวัลของฉัน</h2>
+        
+        <!-- แถบเมนูสถานะ (ด้านบน) -->
+        <div class="flex bg-gray-200/60 p-1 rounded-xl mb-4 mx-2 flex-shrink-0">
+            <button id="tab-btn-available" onclick="switchMyRewardTab('available')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow-sm text-blue-800 transition-all">
+                ใช้งานได้
+            </button>
+            <button id="tab-btn-used" onclick="switchMyRewardTab('used')" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                ใช้แล้ว
+            </button>
+            <button id="tab-btn-expired" onclick="switchMyRewardTab('expired')" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+                หมดอายุ
+            </button>
+        </div>
+
+        <!-- พื้นที่แสดงการ์ด (สามารถ Scroll ได้เมื่อล้นจอ) -->
+        <div class="flex-1 overflow-y-auto hide-scroll px-1 pb-6">
+            <div id="my-rewards-available-container" class="flex flex-col gap-3"></div>
+            <div id="my-rewards-used-container" class="flex flex-col gap-3 hidden"></div>
+            <div id="my-rewards-expired-container" class="flex flex-col gap-3 hidden"></div>
+        </div>
+    </div>
+
+    <!-- 2.2 หน้า เมนู -->
+    <div id="menu-page" class="w-full max-w-md hidden opacity-0 transition-opacity duration-300">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 px-2">เมนู</h2>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <button onclick="showComingSoon()" class="w-full text-left px-5 py-4 text-gray-700 hover:bg-gray-50 transition-colors font-bold flex items-center gap-3 border-b border-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                แนะนำคุณภาพสินค้าและบริการ
+            </button>
+            <button onclick="openChangePwdModal()" class="w-full text-left px-5 py-4 text-gray-700 hover:bg-gray-50 transition-colors font-bold flex items-center gap-3 border-b border-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                เปลี่ยนรหัสผ่าน
+            </button>
+            <button onclick="logout()" class="w-full text-left px-5 py-4 text-red-500 hover:bg-red-50 transition-colors font-bold flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                ออกจากระบบ
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. Modal QR Code หลัก (ใช้รับแต้ม) -->
+    <div id="qr-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-70 transition-opacity">
+        <div class="bg-white rounded-3xl p-8 w-11/12 max-w-sm text-center shadow-2xl relative">
+            <button onclick="closeQRModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h3 class="text-xl font-bold text-blue-900 mb-6">คิวอาร์โคดเพื่อรับแต้ม</h3>
+            <div class="flex justify-center mb-6">
+                <div id="qrcode" class="p-4 bg-white rounded-xl shadow-inner border-2 border-gray-100"></div>
+            </div>
+            <p class="text-sm text-gray-600 bg-gray-100 p-3 rounded-lg font-medium">
+            แสดงคิวอาร์โคดนี้ให้กับพนักงานขายเพื่อรับแต้ม
+            </p>
+        </div>
+    </div>
+
+    <!-- 3.1 หน้าต่างรายละเอียดของรางวัล (แลกแต้ม) -->
+    <div id="reward-detail-modal" class="fixed inset-0 z-50 hidden bg-white flex flex-col transition-transform transform translate-x-full duration-300 max-w-md mx-auto shadow-2xl">
+        <div class="px-4 py-3 flex items-center border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm">
+            <button onclick="closeRewardDetail()" class="text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h2 class="ml-2 font-bold text-lg text-gray-800">รายละเอียดของรางวัล</h2>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto pb-24 hide-scroll">
+            <div class="w-full aspect-square bg-gray-50">
+                <img id="detail-image" src="" alt="Reward Image" class="w-full h-full object-cover">
+            </div>
+            <div class="p-5">
+                <h3 id="detail-name" class="text-xl font-bold text-gray-900 mb-3 leading-snug"></h3>
+                <div class="inline-flex items-center bg-blue-50 text-blue-700 font-bold px-3 py-1.5 rounded-lg text-sm border border-blue-100 mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
+                    </svg>
+                    ใช้ <span id="detail-points" class="mx-1"></span> แต้ม
+                </div>
+                <h4 class="font-bold text-gray-800 mb-2">เงื่อนไขการแลกของรางวัล</h4>
+                <p id="detail-condition" class="text-gray-600 text-sm whitespace-pre-wrap leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100"></p>
+            </div>
+        </div>
+
+        <div class="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-gray-100 z-10 max-w-md mx-auto left-1/2 transform -translate-x-1/2">
+             <button onclick="openConfirmModal()" class="w-full bg-blue-800 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition-colors">
+                แลกของรางวัล
+             </button>
+        </div>
+    </div>
+
+    <!-- 3.2 ป๊อปอัพยืนยันการแลก -->
+    <div id="confirm-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black bg-opacity-60 transition-opacity">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm text-center shadow-2xl relative transform scale-100">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">แลกของรางวัลชิ้นนี้หรือไม่?</h3>
+            <p id="confirm-text" class="text-sm text-gray-500 mb-6 leading-relaxed"></p>
+            
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                <button id="btn-confirm-redeem" onclick="processRedeem()" class="flex-1 bg-blue-800 text-white font-bold py-3 rounded-xl hover:bg-blue-900 transition-colors flex justify-center items-center">
+                    <span id="txt-confirm-redeem">ยืนยัน</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3.3 หน้าต่างรายละเอียด "รางวัลของฉัน" (My Reward Detail Modal) -->
+    <div id="my-reward-detail-modal" class="fixed inset-0 z-[60] hidden bg-white flex flex-col transition-transform transform translate-x-full duration-300 max-w-md mx-auto shadow-2xl">
+        <div class="px-4 py-3 flex items-center border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm">
+            <button onclick="closeMyRewardDetail()" class="text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h2 class="ml-2 font-bold text-lg text-gray-800">รายละเอียดคูปอง</h2>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto pb-6 hide-scroll">
+            <div class="p-6 flex flex-col items-center">
+                <h3 id="my-detail-name" class="text-xl font-bold text-gray-900 mb-4 text-center leading-snug"></h3>
+                
+                <div class="w-full bg-blue-50 rounded-2xl p-5 mb-6 border border-blue-100 shadow-inner text-center relative overflow-hidden">
+                    <div id="my-detail-used-overlay" class="hidden absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-10">
+                        <div class="border-4 border-red-500 text-red-500 font-bold text-xl px-4 py-2 transform -rotate-12 rounded-lg opacity-80">ใช้แล้ว</div>
+                    </div>
+                    <div id="my-detail-expired-overlay" class="hidden absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-10">
+                        <div class="border-4 border-gray-500 text-gray-500 font-bold text-xl px-4 py-2 transform -rotate-12 rounded-lg opacity-80">หมดอายุ</div>
+                    </div>
+                    <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">รหัสคูปอง</p>
+                    <p id="my-detail-coupon" class="text-2xl font-mono font-bold text-blue-900 tracking-widest break-all"></p>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex justify-center w-full max-w-[240px] relative">
+                    <div id="my-qrcode"></div>
+                </div>
+
+                <div class="w-full space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">แต้มที่ใช้แลก:</span>
+                        <span id="my-detail-points" class="font-bold text-gray-800"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">วันที่แลก:</span>
+                        <span id="my-detail-redeem" class="font-medium text-gray-800"></span>
+                    </div>
+                    <div id="my-detail-used-container" class="hidden flex justify-between pt-3 border-t border-gray-200">
+                        <span class="text-gray-500 font-bold">วันที่รับรางวัล:</span>
+                        <span id="my-detail-used-date" class="font-bold text-gray-800"></span>
+                    </div>
+                    <div id="my-detail-expire-container" class="flex justify-between pt-3 border-t border-gray-200">
+                        <span class="text-red-500 font-bold">วันหมดอายุ:</span>
+                        <span id="my-detail-expire" class="font-bold text-red-600"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3.4 หน้าต่าง "เปลี่ยนรหัสผ่าน" -->
+    <div id="change-pwd-modal" class="fixed inset-0 z-[60] hidden bg-white flex flex-col transition-transform transform translate-x-full duration-300 max-w-md mx-auto shadow-2xl">
+        <div class="px-4 py-3 flex items-center border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm">
+            <button onclick="closeChangePwdModal()" class="text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h2 class="ml-2 font-bold text-lg text-gray-800">เปลี่ยนรหัสผ่าน</h2>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6 hide-scroll">
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-500 mb-2">รหัสผ่านเดิม</label>
+                    <div class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-600 font-mono text-lg tracking-widest">
+                        <span id="disp-old-pwd"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="inputNewPwd" class="block text-sm font-semibold text-gray-700 mb-2">รหัสผ่านใหม่</label>
+                    <input type="text" id="inputNewPwd" 
+                           class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-left text-lg tracking-widest font-mono font-bold"
+                           placeholder="ตั้งรหัสผ่านใหม่">
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border-t border-gray-100 mt-auto">
+             <button onclick="openConfirmPwd()" class="w-full bg-blue-800 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition-colors">
+                ยืนยันการเปลี่ยนรหัสผ่าน
+             </button>
+        </div>
+    </div>
+
+    <!-- 3.5 ป๊อปอัพยืนยันเปลี่ยนรหัสผ่าน -->
+    <div id="confirm-pwd-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black bg-opacity-60 transition-opacity">
+        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm text-center shadow-2xl relative transform scale-100">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">ยืนยันการเปลี่ยนรหัสผ่าน?</h3>
+            <p class="text-sm text-gray-500 mb-6 leading-relaxed">คุณต้องการบันทึกรหัสผ่านใหม่นี้ใช่หรือไม่?</p>
+            
+            <div class="flex gap-3">
+                <button onclick="closeConfirmPwd()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                <button id="btn-confirm-pwd" onclick="processChangePwd()" class="flex-1 bg-blue-800 text-white font-bold py-3 rounded-xl hover:bg-blue-900 transition-colors flex justify-center items-center">
+                    <span id="txt-confirm-pwd">ยืนยัน</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. แถบเมนูด้านล่าง -->
+    <div id="bottom-nav" class="fixed bottom-0 left-0 w-full bg-white shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-40 hidden">
+        <div class="flex justify-around items-center h-16 max-w-md mx-auto px-2">
+            <button id="nav-home" onclick="switchTab('home')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-blue-800 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span class="text-[10px] mt-1 font-bold">หน้าหลัก</span>
+            </button>
+            <button id="nav-rewards" onclick="switchTab('rewards')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
+                <span class="text-[10px] mt-1 font-bold">รางวัลของฉัน</span>
+            </button>
+            <button id="nav-menu" onclick="switchTab('menu')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                <span class="text-[10px] mt-1 font-bold">เมนู</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // ========================================================
+        // ⚙️ ตั้งค่าส่วนที่ 2: ลิงก์เชื่อมต่อฐานข้อมูล GAS (API)
+        // ========================================================
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby4R7zNaHDT1bBSU0mqeuigF9fcxPNZWKwluOjM-Y6Pf8VEgZp6-dhKJNWt7BQmaro0/exec";
+        // ========================================================
+
+        let currentUser = null;
+        let qrCodeInstance = null;
+        let myQRCodeInstance = null;
+        
+        let availableRewardsList = []; 
+        let myAvailableRewards = []; 
+        let myUsedRewards = [];      
+        let myExpiredRewards = [];   
+        
+        let selectedRewardIndex = null;
+        let savedPhone = '';
+        let savedPassword = '';
+        let loginProgressInterval = null;
+
+        // ฟังก์ชันหลักสำหรับสื่อสารกับ Backend (Fetch API)
+        async function callGasApi(action, data = {}) {
+            if (GAS_WEBAPP_URL === "YOUR_GAS_WEB_APP_URL_HERE") {
+                throw new Error("กรุณาใส่ URL ของ Google Apps Script (GAS_WEBAPP_URL) ในโค้ดก่อนใช้งาน!");
+            }
+            try {
+                const response = await fetch(GAS_WEBAPP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: action, data: data }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } // ป้องกันปัญหา CORS
+                });
+                return await response.json();
+            } catch (error) {
+                console.error("API Error:", error);
+                throw error;
+            }
+        }
+
+        function showMsg(title, text) {
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-text').innerText = text;
+            document.getElementById('msg-modal').classList.remove('hidden');
+        }
+        
+        function closeMsg() { document.getElementById('msg-modal').classList.add('hidden'); }
+
+        function resetLoginBtn() {
+            if (loginProgressInterval) clearInterval(loginProgressInterval);
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('btnText').innerText = 'เข้าสู่ระบบ';
+            document.getElementById('progress-container').classList.add('hidden');
+            const progBar = document.getElementById('progress-bar');
+            progBar.style.transitionDuration = '0ms'; 
+            progBar.style.width = '0%';
+            document.getElementById('progress-text').innerText = '0%';
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('inputPassword');
+            const icon = document.getElementById('eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
+            } else {
+                input.type = 'password';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
+            }
+        }
+
+        function processLogin(isSilent = false) {
+            let phone = '';
+            let password = '';
+
+            if (!isSilent) {
+                phone = document.getElementById('inputPhone').value;
+                password = document.getElementById('inputPassword').value;
+                if (!phone || !password) {
+                    showMsg('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกเบอร์โทรศัพท์และรหัสผ่าน'); return;
+                }
+                savedPhone = phone; savedPassword = password;
+                
+                document.getElementById('loginBtn').disabled = true;
+                document.getElementById('btnText').innerText = 'กำลังเข้าสู่ระบบ...';
+                document.getElementById('progress-container').classList.remove('hidden');
+
+                const progBar = document.getElementById('progress-bar');
+                const progText = document.getElementById('progress-text');
+                const progLabel = document.getElementById('progress-label');
+                
+                progLabel.innerText = 'กำลังเชื่อมต่อข้อมูล...';
+                progBar.style.transitionDuration = '100ms'; 
+                
+                let currentProgress = 0;
+                
+                if (loginProgressInterval) clearInterval(loginProgressInterval);
+                loginProgressInterval = setInterval(() => {
+                    if (currentProgress < 85) {
+                        currentProgress += 1;
+                        progBar.style.width = currentProgress + '%';
+                        progText.innerText = currentProgress + '%';
+                        
+                        if(currentProgress === 30) progLabel.innerText = 'กำลังตรวจสอบสิทธิ์...';
+                        if(currentProgress === 60) progLabel.innerText = 'กำลังเตรียมข้อมูลลูกค้า...';
+                    }
+                }, 35); 
+
+            } else {
+                phone = savedPhone; password = savedPassword;
+            }
+
+            // เรียกใช้ API ใหม่ที่เซิร์ฟเวอร์
+            callGasApi('loginUser', { phone: phone, password: password })
+                .then(response => {
+                    if (!isSilent) clearInterval(loginProgressInterval);
+                    handleLoginResponse(response, isSilent);
+                })
+                .catch(error => {
+                    if (!isSilent) {
+                        resetLoginBtn();
+                        showMsg('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+                    }
+                });
+        }
+
+        function handleLoginResponse(response, isSilent) {
+            if (!response) {
+                if (!isSilent) {
+                    resetLoginBtn();
+                    showMsg('เกิดข้อผิดพลาด', 'ระบบหลังบ้านส่งข้อมูลขัดข้อง');
+                }
+                return;
+            }
+
+            if (!isSilent) {
+                const progBar = document.getElementById('progress-bar');
+                const progText = document.getElementById('progress-text');
+                const progLabel = document.getElementById('progress-label');
+                
+                if (response.success) {
+                    progLabel.innerText = 'เสร็จสมบูรณ์!';
+                    progBar.style.transitionDuration = '300ms'; 
+                    progBar.style.width = '100%'; 
+                    progText.innerText = '100%';
+                } else {
+                    resetLoginBtn(); 
+                    showMsg('เข้าสู่ระบบไม่สำเร็จ', response.message); 
+                    return;
+                }
+            } else {
+                if (!response.success) return; 
+            }
+
+            currentUser = response;
+            
+            let cleanPoints = String(response.points || '0').replace(/,/g, '');
+            let parsedPoints = parseFloat(cleanPoints);
+            document.getElementById('disp-points').innerText = isNaN(parsedPoints) ? '0' : parsedPoints.toLocaleString('en-US');
+            
+            document.getElementById('disp-id').innerText = response.customerId;
+            document.getElementById('disp-name').innerText = response.customerName;
+            document.getElementById('disp-level').innerText = response.level;
+
+            const currentYearThai = new Date().getFullYear() + 543;
+            document.getElementById('disp-volume-label').innerText = `ปริมาณสะสมปี พ.ศ. ${currentYearThai}`;
+            
+            let volumeDisplay = '0';
+            if (response.accumulatedVolume !== undefined && response.accumulatedVolume !== null && String(response.accumulatedVolume).trim() !== '') {
+                let cleanVolume = String(response.accumulatedVolume).replace(/,/g, '');
+                let parsedVol = parseFloat(cleanVolume);
+                
+                if (!isNaN(parsedVol)) {
+                    volumeDisplay = parsedVol.toLocaleString('en-US');
+                } else {
+                    volumeDisplay = response.accumulatedVolume; 
+                }
+            }
+            document.getElementById('disp-volume').innerText = volumeDisplay;
+
+            const lvlBadge = document.getElementById('disp-level');
+            const levelColors = [
+                'linear-gradient(to right, #9ca3af, #6b7280)', 'linear-gradient(to right, #cbd5e1, #94a3b8)', 
+                'linear-gradient(to right, #fbbf24, #f59e0b)', 'linear-gradient(to right, #a855f7, #7e22ce)', 
+                'linear-gradient(to right, #1f2937, #000000)', 'linear-gradient(to right, #ef4444, #b91c1c)', 
+                'linear-gradient(to right, #10b981, #047857)', 'linear-gradient(to right, #3b82f6, #1d4ed8)'  
+            ];
+            const knownLevels = { 'เริ่มต้น': 0, 'เงิน': 1, 'ทอง': 2, 'อัญมณี': 3, 'สูงสุด': 4 };
+            let colorIndex = 0;
+            
+            if (response.level && knownLevels[response.level] !== undefined) {
+                colorIndex = knownLevels[response.level];
+            } else if (response.level) {
+                let hash = 0;
+                for (let i = 0; i < response.level.length; i++) hash = response.level.charCodeAt(i) + ((hash << 5) - hash);
+                colorIndex = Math.abs(hash) % levelColors.length;
+            }
+            lvlBadge.style.background = levelColors[colorIndex];
+
+            const rewardsContainer = document.getElementById('rewards-container');
+            if (rewardsContainer) {
+                rewardsContainer.innerHTML = '';
+                if (response.rewards && response.rewards.length > 0) {
+                    availableRewardsList = response.rewards; 
+                    response.rewards.forEach((reward, index) => {
+                        const card = `
+                        <div onclick="openRewardDetail(${index})" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer">
+                            <div class="aspect-square bg-gray-50 relative border-b border-gray-100">
+                                <img src="${reward.image}" alt="${reward.name}" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
+                            </div>
+                            <div class="p-3 flex-1 flex flex-col justify-between">
+                                <h4 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 leading-snug">${reward.name}</h4>
+                                <div class="flex items-center mt-auto">
+                                    <div class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1.5 rounded-lg w-full text-center border border-blue-100">
+                                        ใช้ ${Number(reward.points).toLocaleString()} แต้ม
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                        rewardsContainer.insertAdjacentHTML('beforeend', card);
+                    });
+                } else {
+                    rewardsContainer.innerHTML = '<div class="col-span-2 text-center text-sm text-gray-500 py-8 bg-white rounded-2xl border border-gray-100">ไม่มีของรางวัลในขณะนี้</div>';
+                }
+            }
+
+            myAvailableRewards = [];
+            myUsedRewards = [];
+            myExpiredRewards = [];
+            
+            if (response.myRewards && response.myRewards.length > 0) {
+                myAvailableRewards = response.myRewards.filter(r => r.status === '0');
+                myUsedRewards = response.myRewards.filter(r => r.status === '1');
+                myExpiredRewards = response.myRewards.filter(r => r.status === '2');
+
+                myAvailableRewards.sort((a, b) => {
+                    if (a.rawExpireDate === b.rawExpireDate) return b.points - a.points;
+                    return a.rawExpireDate - b.rawExpireDate;
+                });
+                myUsedRewards.sort((a, b) => b.points - a.points);
+                myExpiredRewards.sort((a, b) => b.points - a.points);
+            }
+
+            renderMyRewards(); 
+
+            if (!isSilent) {
+                setTimeout(() => {
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('bottom-nav').classList.remove('hidden');
+                    switchTab('home');
+                    switchMyRewardTab('available'); 
+                }, 400); 
+            }
+        }
+
+        function renderMyRewards() {
+            const availContainer = document.getElementById('my-rewards-available-container');
+            const usedContainer = document.getElementById('my-rewards-used-container');
+            const expiredContainer = document.getElementById('my-rewards-expired-container');
+            
+            if (!availContainer || !usedContainer || !expiredContainer) return;
+            availContainer.innerHTML = ''; usedContainer.innerHTML = ''; expiredContainer.innerHTML = '';
+
+            // 1. Render ใช้งานได้
+            if (myAvailableRewards.length > 0) {
+                myAvailableRewards.forEach((item, index) => {
+                    const myCard = `
+                    <div onclick="openMyRewardDetail(${index}, 'available')" class="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex items-center p-3 hover:shadow-md transition-shadow cursor-pointer relative">
+                        <div class="w-20 h-20 bg-gray-50 rounded-xl border border-gray-100 flex-shrink-0">
+                            <img src="${item.image}" alt="${item.name}" class="object-cover w-full h-full rounded-xl" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
+                        </div>
+                        <div class="ml-4 flex-1 flex flex-col justify-center pr-2 w-full">
+                            <div class="flex justify-between items-start mb-1 gap-2">
+                                <h4 class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">${item.name}</h4>
+                                <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 mt-0.5">ใช้งานได้</span>
+                            </div>
+                            <div class="text-[11px] font-medium text-red-500 bg-red-50 inline-block px-2 py-1 rounded-md self-start border border-red-100">
+                                หมดอายุ: ${item.expireDate}
+                            </div>
+                        </div>
+                    </div>`;
+                    availContainer.insertAdjacentHTML('beforeend', myCard);
+                });
+            } else {
+                availContainer.innerHTML = '<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"><p class="text-sm text-gray-500 text-center py-6">ไม่มีคูปองที่ใช้งานได้</p></div>';
+            }
+
+            // 2. Render ใช้แล้ว
+            if (myUsedRewards.length > 0) {
+                myUsedRewards.forEach((item, index) => {
+                    const myCard = `
+                    <div onclick="openMyRewardDetail(${index}, 'used')" class="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex items-center p-3 hover:shadow-md transition-shadow cursor-pointer relative opacity-80">
+                        <div class="w-20 h-20 bg-gray-50 rounded-xl border border-gray-100 flex-shrink-0">
+                            <img src="${item.image}" alt="${item.name}" class="object-cover w-full h-full rounded-xl grayscale" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
+                        </div>
+                        <div class="ml-4 flex-1 flex flex-col justify-center pr-2 w-full">
+                            <div class="flex justify-between items-start mb-1 gap-2">
+                                <h4 class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">${item.name}</h4>
+                                <span class="bg-gray-200 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 mt-0.5">ใช้แล้ว</span>
+                            </div>
+                            <div class="text-[11px] font-medium text-gray-600 bg-gray-100 inline-block px-2 py-1 rounded-md self-start border border-gray-200">
+                                วันที่รับรางวัล: ${item.usedDate}
+                            </div>
+                        </div>
+                    </div>`;
+                    usedContainer.insertAdjacentHTML('beforeend', myCard);
+                });
+            } else {
+                usedContainer.innerHTML = '<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"><p class="text-sm text-gray-500 text-center py-6">ประวัติการใช้ว่างเปล่า</p></div>';
+            }
+            
+            // 3. Render หมดอายุ
+            if (myExpiredRewards.length > 0) {
+                myExpiredRewards.forEach((item, index) => {
+                    const myCard = `
+                    <div onclick="openMyRewardDetail(${index}, 'expired')" class="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex items-center p-3 hover:shadow-md transition-shadow cursor-pointer relative opacity-80">
+                        <div class="w-20 h-20 bg-gray-50 rounded-xl border border-gray-100 flex-shrink-0">
+                            <img src="${item.image}" alt="${item.name}" class="object-cover w-full h-full rounded-xl grayscale" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
+                        </div>
+                        <div class="ml-4 flex-1 flex flex-col justify-center pr-2 w-full">
+                            <div class="flex justify-between items-start mb-1 gap-2">
+                                <h4 class="text-sm font-bold text-gray-800 line-clamp-2 leading-snug">${item.name}</h4>
+                                <span class="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 mt-0.5">หมดอายุ</span>
+                            </div>
+                            <div class="text-[11px] font-medium text-red-500 bg-red-50 inline-block px-2 py-1 rounded-md self-start border border-red-100">
+                                หมดอายุ: ${item.expireDate}
+                            </div>
+                        </div>
+                    </div>`;
+                    expiredContainer.insertAdjacentHTML('beforeend', myCard);
+                });
+            } else {
+                expiredContainer.innerHTML = '<div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"><p class="text-sm text-gray-500 text-center py-6">ไม่มีคูปองที่หมดอายุ</p></div>';
+            }
+        }
+
+        function switchMyRewardTab(tab) {
+            const tabs = ['available', 'used', 'expired'];
+            
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const cont = document.getElementById(`my-rewards-${t}-container`);
+                
+                if (t === tab) {
+                    btn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow-sm text-blue-800 transition-all";
+                    cont.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition-all bg-transparent";
+                    cont.classList.add('hidden');
+                }
+            });
+        }
+
+        function showQRModal() {
+            if (!currentUser) return;
+            const qrData = currentUser.customerId + "RP";
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = ''; 
+            qrCodeInstance = new QRCode(qrContainer, {
+                text: qrData, width: 200, height: 200, colorDark : "#1e3a8a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
+            });
+            document.getElementById('qr-modal').classList.remove('hidden');
+        }
+
+        function closeQRModal() { document.getElementById('qr-modal').classList.add('hidden'); }
+
+        function openRewardDetail(index) {
+            selectedRewardIndex = index;
+            const reward = availableRewardsList[index];
+            document.getElementById('detail-image').src = reward.image;
+            document.getElementById('detail-name').innerText = reward.name;
+            document.getElementById('detail-points').innerText = Number(reward.points).toLocaleString();
+            document.getElementById('detail-condition').innerText = reward.condition || 'ไม่มีเงื่อนไขเพิ่มเติม';
+            
+            const modal = document.getElementById('reward-detail-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('translate-x-full'); }, 10);
+        }
+
+        function closeRewardDetail() {
+            const modal = document.getElementById('reward-detail-modal');
+            modal.classList.add('translate-x-full');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            selectedRewardIndex = null;
+        }
+
+        function openMyRewardDetail(index, type) {
+            let item;
+            if (type === 'available') item = myAvailableRewards[index];
+            else if (type === 'used') item = myUsedRewards[index];
+            else if (type === 'expired') item = myExpiredRewards[index];
+            
+            if (!item) return;
+            
+            document.getElementById('my-detail-name').innerText = item.name;
+            document.getElementById('my-detail-coupon').innerText = item.couponCode;
+            document.getElementById('my-detail-points').innerText = Number(item.points).toLocaleString() + ' แต้ม';
+            document.getElementById('my-detail-redeem').innerText = item.redeemDate;
+            document.getElementById('my-detail-expire').innerText = item.expireDate;
+            
+            const usedDateContainer = document.getElementById('my-detail-used-container');
+            const usedOverlay = document.getElementById('my-detail-used-overlay');
+            const expiredOverlay = document.getElementById('my-detail-expired-overlay');
+            
+            usedDateContainer.classList.add('hidden');
+            usedOverlay.classList.add('hidden');
+            expiredOverlay.classList.add('hidden');
+            
+            let qrColor = "#1e3a8a";
+            
+            if (type === 'used') {
+                usedDateContainer.classList.remove('hidden');
+                document.getElementById('my-detail-used-date').innerText = item.usedDate;
+                usedOverlay.classList.remove('hidden');
+                qrColor = "#9ca3af";
+            } else if (type === 'expired') {
+                expiredOverlay.classList.remove('hidden');
+                qrColor = "#9ca3af";
+            }
+            
+            const qrContainer = document.getElementById('my-qrcode');
+            qrContainer.innerHTML = ''; 
+            myQRCodeInstance = new QRCode(qrContainer, {
+                text: item.couponCode, 
+                width: 180, 
+                height: 180, 
+                colorDark : qrColor, 
+                colorLight : "#ffffff", 
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            
+            const modal = document.getElementById('my-reward-detail-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('translate-x-full'); }, 10);
+        }
+
+        function closeMyRewardDetail() {
+            const modal = document.getElementById('my-reward-detail-modal');
+            modal.classList.add('translate-x-full');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function openConfirmModal() {
+            if (selectedRewardIndex === null) return;
+            const reward = availableRewardsList[selectedRewardIndex];
+            
+            if(Number(currentUser.points) < Number(reward.points)) {
+                showMsg('แต้มไม่พอ', 'แต้มสะสมของคุณไม่เพียงพอสำหรับการแลกรางวัลชิ้นนี้'); return;
+            }
+
+            document.getElementById('confirm-text').innerHTML = `โปรดยืนยันการแลก <b>${reward.name}</b><br>เมื่อแลกแล้วจะไม่สามารถยกเลิกหรือขอคืนแต้มได้`;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
+
+        function processRedeem() {
+            if (selectedRewardIndex === null || !currentUser) return;
+            
+            const reward = availableRewardsList[selectedRewardIndex];
+            const customerId = currentUser.customerId; 
+            
+            const btn = document.getElementById('btn-confirm-redeem');
+            btn.disabled = true;
+            document.getElementById('txt-confirm-redeem').innerText = 'กำลังดำเนินการ...';
+
+            callGasApi('redeemReward', {
+                customerId: customerId,
+                rewardName: reward.name,
+                points: reward.points,
+                rewardImage: reward.image,
+                rewardCode: reward.rewardCode
+            })
+            .then(response => {
+                btn.disabled = false;
+                document.getElementById('txt-confirm-redeem').innerText = 'ยืนยัน';
+                closeConfirmModal();
+                
+                if (response.success) {
+                    currentUser.points = response.remainingPoints;
+                    document.getElementById('disp-points').innerText = Number(currentUser.points).toLocaleString();
+                    showMsg('แลกสำเร็จ!', `คุณได้รับรหัสคูปอง: ${response.couponCode}\n\nกรุณาแคปหน้าจอคูปองนี้ไว้เป็นหลักฐาน`);
+                    closeRewardDetail();
+                    processLogin(true); // รีโหลดข้อมูลแบบเงียบ
+                } else {
+                    showMsg('ไม่สามารถแลกได้', response.message);
+                }
+            })
+            .catch(error => {
+                btn.disabled = false;
+                document.getElementById('txt-confirm-redeem').innerText = 'ยืนยัน';
+                closeConfirmModal();
+                showMsg('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            });
+        }
+
+        function switchTab(tab) {
+            ['home', 'rewards', 'menu'].forEach(t => {
+                const section = document.getElementById(t + (t === 'home' ? '-section' : '-page'));
+                section.classList.add('hidden');
+                section.classList.remove('opacity-100');
+                section.classList.add('opacity-0');
+            });
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-800');
+                btn.classList.add('text-gray-400');
+            });
+
+            const activeSection = document.getElementById(tab + (tab === 'home' ? '-section' : '-page'));
+            activeSection.classList.remove('hidden');
+            setTimeout(() => {
+                activeSection.classList.remove('opacity-0');
+                activeSection.classList.add('opacity-100');
+            }, 50);
+
+            document.getElementById('nav-' + tab).classList.remove('text-gray-400');
+            document.getElementById('nav-' + tab).classList.add('text-blue-800');
+        }
+
+        function logout() {
+            currentUser = null; savedPhone = ''; savedPassword = '';
+            document.getElementById('inputPhone').value = '';
+            document.getElementById('inputPassword').value = '';
+            document.getElementById('inputPassword').type = 'password'; 
+            document.getElementById('eye-icon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
+            resetLoginBtn();
+            
+            document.getElementById('bottom-nav').classList.add('hidden');
+            ['home-section', 'rewards-page', 'menu-page'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) { el.classList.add('opacity-0'); setTimeout(() => el.classList.add('hidden'), 300); }
+            });
+            setTimeout(() => { document.getElementById('login-section').classList.remove('hidden'); }, 400);
+        }
+
+        function showComingSoon() {
+            showMsg('แนะนำคุณภาพสินค้าและบริการ', 'เร็วๆ นี้');
+        }
+
+        function openChangePwdModal() {
+            document.getElementById('disp-old-pwd').innerText = savedPassword;
+            document.getElementById('inputNewPwd').value = '';
+            
+            const modal = document.getElementById('change-pwd-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('translate-x-full'); }, 10);
+        }
+
+        function closeChangePwdModal() {
+            const modal = document.getElementById('change-pwd-modal');
+            modal.classList.add('translate-x-full');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function openConfirmPwd() {
+            const newPwd = document.getElementById('inputNewPwd').value.trim();
+            if (!newPwd) {
+                showMsg('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกรหัสผ่านใหม่'); return;
+            }
+            if (newPwd === savedPassword) {
+                showMsg('ข้อมูลซ้ำ', 'รหัสผ่านใหม่ต้องไม่ตรงกับรหัสผ่านเดิม'); return;
+            }
+            document.getElementById('confirm-pwd-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmPwd() {
+            document.getElementById('confirm-pwd-modal').classList.add('hidden');
+        }
+
+        function processChangePwd() {
+            const newPwd = document.getElementById('inputNewPwd').value.trim();
+            if (!currentUser) return;
+            
+            const customerId = currentUser.customerId;
+            const btn = document.getElementById('btn-confirm-pwd');
+            btn.disabled = true;
+            document.getElementById('txt-confirm-pwd').innerText = 'กำลังบันทึก...';
+            
+            callGasApi('changeUserPassword', {
+                customerId: customerId,
+                newPassword: newPwd
+            })
+            .then(response => {
+                btn.disabled = false;
+                document.getElementById('txt-confirm-pwd').innerText = 'ยืนยัน';
+                closeConfirmPwd();
+                
+                if (response.success) {
+                    showMsg('สำเร็จ', 'บันทึกรหัสผ่านใหม่เรียบร้อยแล้ว');
+                    savedPassword = newPwd; 
+                    closeChangePwdModal();
+                } else {
+                    showMsg('เกิดข้อผิดพลาด', response.message);
+                }
+            })
+            .catch(error => {
+                btn.disabled = false;
+                document.getElementById('txt-confirm-pwd').innerText = 'ยืนยัน';
+                closeConfirmPwd();
+                showMsg('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            });
+        }
+
+        // ดึงข้อมูลเวอร์ชันเมื่อโหลดหน้าเว็บเสร็จ
+        document.addEventListener('DOMContentLoaded', () => {
+            if (GAS_WEBAPP_URL !== "YOUR_GAS_WEB_APP_URL_HERE" && GAS_WEBAPP_URL.trim() !== "") {
+                callGasApi('getAppVersion')
+                    .then(res => {
+                        if (res.success) {
+                            document.getElementById('app-version-display').innerText = res.version;
+                        } else {
+                            document.getElementById('app-version-display').innerText = "ไม่สามารถระบุเวอร์ชันได้";
+                        }
+                    })
+                    .catch(err => {
+                        document.getElementById('app-version-display').innerText = "เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว";
+                        console.error("Fetch version error:", err);
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
