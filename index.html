@@ -172,7 +172,15 @@
 
         <!-- พื้นที่แสดงการ์ด (สามารถ Scroll ได้เมื่อล้นจอ) -->
         <div class="flex-1 overflow-y-auto hide-scroll px-1 pb-6">
-            <div id="my-rewards-available-container" class="flex flex-col gap-3"></div>
+            <div id="my-rewards-available-container" class="flex flex-col gap-3">
+                <div class="text-center text-sm text-gray-400 py-8 flex flex-col items-center">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    กำลังโหลดข้อมูลคูปอง...
+                </div>
+            </div>
             <div id="my-rewards-used-container" class="flex flex-col gap-3 hidden"></div>
             <div id="my-rewards-expired-container" class="flex flex-col gap-3 hidden"></div>
         </div>
@@ -431,7 +439,7 @@
                 const response = await fetch(GAS_WEBAPP_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: action, data: data }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } // ป้องกันปัญหา CORS
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
                 });
                 return await response.json();
             } catch (error) {
@@ -491,28 +499,27 @@
                 const progText = document.getElementById('progress-text');
                 const progLabel = document.getElementById('progress-label');
                 
-                progLabel.innerText = 'กำลังเชื่อมต่อข้อมูล...';
+                progLabel.innerText = 'กำลังตรวจสอบสิทธิ์...';
                 progBar.style.transitionDuration = '100ms'; 
                 
                 let currentProgress = 0;
                 
                 if (loginProgressInterval) clearInterval(loginProgressInterval);
                 loginProgressInterval = setInterval(() => {
-                    if (currentProgress < 85) {
+                    if (currentProgress < 90) {
                         currentProgress += 1;
                         progBar.style.width = currentProgress + '%';
                         progText.innerText = currentProgress + '%';
                         
-                        if(currentProgress === 30) progLabel.innerText = 'กำลังตรวจสอบสิทธิ์...';
-                        if(currentProgress === 60) progLabel.innerText = 'กำลังดึงข้อมูลของรางวัล...';
+                        if(currentProgress === 40) progLabel.innerText = 'โหลดข้อมูลผู้ใช้และโปรโมชัน...';
                     }
-                }, 35);
+                }, 15);
 
             } else {
                 phone = savedPhone; password = savedPassword;
             }
 
-            // เรียกใช้ API แบบโหลดข้อมูลทั้งหมดทีเดียว
+            // เรียกใช้ API โหลดเฉพาะข้อมูลที่จำเป็นก่อน (Home Data)
             callGasApi('loginUser', { phone: phone, password: password })
                 .then(response => {
                     if (!isSilent) clearInterval(loginProgressInterval);
@@ -542,7 +549,7 @@
                 
                 if (response.success) {
                     progLabel.innerText = 'เสร็จสมบูรณ์!';
-                    progBar.style.transitionDuration = '300ms'; 
+                    progBar.style.transitionDuration = '100ms'; 
                     progBar.style.width = '100%'; 
                     progText.innerText = '100%';
                 } else {
@@ -556,7 +563,7 @@
 
             currentUser = response;
             
-            // 1. อัปเดตข้อมูลผู้ใช้พื้นฐาน
+            // 1. อัปเดตข้อมูลหน้าหลัก
             let cleanPoints = String(response.points || '0').replace(/,/g, '');
             let parsedPoints = parseFloat(cleanPoints);
             document.getElementById('disp-points').innerText = isNaN(parsedPoints) ? '0' : parsedPoints.toLocaleString('en-US');
@@ -576,7 +583,7 @@
             }
             document.getElementById('disp-volume').innerText = volumeDisplay;
 
-            // อัปเดตสีเลเวลให้ตรงตามโจทย์: เริ่มต้น เงิน ทอง ทับทิม เพชร
+            // อัปเดตสีเลเวล
             const lvlBadge = document.getElementById('disp-level');
             const levelColors = [
                 'linear-gradient(to right, #6b7280, #374151)', // เริ่มต้น
@@ -589,7 +596,7 @@
             let colorIndex = knownLevels[response.level] !== undefined ? knownLevels[response.level] : 0;
             lvlBadge.style.background = levelColors[colorIndex];
 
-            // 2. แสดงการ์ดของรางวัล (เอาป้ายมุมบนซ้ายออกแล้ว)
+            // แสดงการ์ดของรางวัล (หน้าหลัก)
             const rewardsContainer = document.getElementById('rewards-container');
             if (rewardsContainer) {
                 rewardsContainer.innerHTML = '';
@@ -617,35 +624,46 @@
                 }
             }
 
-            // 3. จัดการข้อมูลคูปอง
-            myAvailableRewards = [];
-            myUsedRewards = [];
-            myExpiredRewards = [];
-            
-            if (response.myRewards && response.myRewards.length > 0) {
-                myAvailableRewards = response.myRewards.filter(r => r.status === '0');
-                myUsedRewards = response.myRewards.filter(r => r.status === '1');
-                myExpiredRewards = response.myRewards.filter(r => r.status === '2');
-
-                myAvailableRewards.sort((a, b) => {
-                    if (a.rawExpireDate === b.rawExpireDate) return b.points - a.points;
-                    return a.rawExpireDate - b.rawExpireDate;
-                });
-                myUsedRewards.sort((a, b) => b.points - a.points);
-                myExpiredRewards.sort((a, b) => b.points - a.points);
-            }
-
-            renderMyRewards(); 
-
-            // ปิดหน้าล็อกอิน แล้วโชว์หน้าแรก
+            // ทันทีที่โหลดข้อมูลพื้นฐานเสร็จ ให้ปิดหน้าล็อกอินแล้วโชว์หน้าแรกทันที
             if (!isSilent) {
                 setTimeout(() => {
                     document.getElementById('login-section').classList.add('hidden');
                     document.getElementById('bottom-nav').classList.remove('hidden');
                     switchTab('home');
                     switchMyRewardTab('available'); 
-                }, 400); 
+                }, 150); 
             }
+
+            // แอบไปดึงข้อมูล "รางวัลของฉัน" (ประวัติคูปอง) ทำงานเบื้องหลัง ไม่ต้องรอ
+            fetchMyRewardsAsync(response.customerId);
+        }
+
+        // ฟังก์ชันโหลดข้อมูล "รางวัลของฉัน" เบื้องหลัง
+        function fetchMyRewardsAsync(customerId) {
+            callGasApi('getMyRewards', { customerId: customerId })
+                .then(res => {
+                    myAvailableRewards = [];
+                    myUsedRewards = [];
+                    myExpiredRewards = [];
+                    
+                    if (res.success && res.myRewards && res.myRewards.length > 0) {
+                        myAvailableRewards = res.myRewards.filter(r => r.status === '0');
+                        myUsedRewards = res.myRewards.filter(r => r.status === '1');
+                        myExpiredRewards = res.myRewards.filter(r => r.status === '2');
+
+                        myAvailableRewards.sort((a, b) => {
+                            if (a.rawExpireDate === b.rawExpireDate) return b.points - a.points;
+                            return a.rawExpireDate - b.rawExpireDate;
+                        });
+                        myUsedRewards.sort((a, b) => b.points - a.points);
+                        myExpiredRewards.sort((a, b) => b.points - a.points);
+                    }
+                    renderMyRewards(); // พอโหลดเสร็จก็เอาไปแปะลงหน้าจอรอไว้
+                })
+                .catch(err => {
+                    console.error("Failed to fetch my rewards", err);
+                    document.getElementById('my-rewards-available-container').innerHTML = '<div class="text-center text-sm text-red-500 py-8">โหลดข้อมูลคูปองล้มเหลว กรุณารีเฟรช</div>';
+                });
         }
 
         function renderMyRewards() {
