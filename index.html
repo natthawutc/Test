@@ -156,7 +156,7 @@
         <div class="w-full mt-2 mb-6">
             <h3 class="font-bold text-gray-800 mb-4 px-2 text-lg">ของรางวัลที่แลกได้</h3>
             <div id="rewards-container" class="grid grid-cols-2 gap-4">
-                <!-- ข้อมูลการ์ดของรางวัล -->
+                <!-- ข้อมูลการ์ดของรางวัลจะแสดงที่นี่แบบ Lazy Load -->
             </div>
         </div>
     </div>
@@ -499,7 +499,7 @@
                 const progText = document.getElementById('progress-text');
                 const progLabel = document.getElementById('progress-label');
                 
-                progLabel.innerText = 'กำลังเชื่อมต่อข้อมูล...';
+                progLabel.innerText = 'กำลังตรวจสอบสิทธิ์...';
                 progBar.style.transitionDuration = '100ms'; 
                 
                 let currentProgress = 0;
@@ -510,11 +510,8 @@
                         currentProgress += 1;
                         progBar.style.width = currentProgress + '%';
                         progText.innerText = currentProgress + '%';
-                        
-                        if(currentProgress === 30) progLabel.innerText = 'กำลังตรวจสอบสิทธิ์...';
-                        if(currentProgress === 60) progLabel.innerText = 'กำลังเตรียมข้อมูลลูกค้า...';
                     }
-                }, 35); 
+                }, 15); // เร่งความเร็วหลอดโหลดตอนล็อกอิน
 
             } else {
                 phone = savedPhone; password = savedPassword;
@@ -550,7 +547,7 @@
                 
                 if (response.success) {
                     progLabel.innerText = 'เสร็จสมบูรณ์!';
-                    progBar.style.transitionDuration = '300ms'; 
+                    progBar.style.transitionDuration = '100ms'; 
                     progBar.style.width = '100%'; 
                     progText.innerText = '100%';
                 } else {
@@ -564,6 +561,7 @@
 
             currentUser = response;
             
+            // 1. อัปเดตข้อมูลผู้ใช้พื้นฐาน (หน้าโฮม)
             let cleanPoints = String(response.points || '0').replace(/,/g, '');
             let parsedPoints = parseFloat(cleanPoints);
             document.getElementById('disp-points').innerText = isNaN(parsedPoints) ? '0' : parsedPoints.toLocaleString('en-US');
@@ -579,96 +577,116 @@
             if (response.accumulatedVolume !== undefined && response.accumulatedVolume !== null && String(response.accumulatedVolume).trim() !== '') {
                 let cleanVolume = String(response.accumulatedVolume).replace(/,/g, '');
                 let parsedVol = parseFloat(cleanVolume);
-                
-                if (!isNaN(parsedVol)) {
-                    volumeDisplay = parsedVol.toLocaleString('en-US');
-                } else {
-                    volumeDisplay = response.accumulatedVolume; 
-                }
+                volumeDisplay = !isNaN(parsedVol) ? parsedVol.toLocaleString('en-US') : response.accumulatedVolume; 
             }
             document.getElementById('disp-volume').innerText = volumeDisplay;
 
-            const lvlBadge = document.getElementById('disp-level');
             // อัปเดตสีเลเวลให้ตรงตามโจทย์: เริ่มต้น เงิน ทอง ทับทิม เพชร
+            const lvlBadge = document.getElementById('disp-level');
             const levelColors = [
-                'linear-gradient(to right, #6b7280, #374151)', // 0: เริ่มต้น (Dark Gray)
-                'linear-gradient(to right, #9ca3af, #d1d5db)', // 1: เงิน (Silver)
-                'linear-gradient(to right, #fbbf24, #d97706)', // 2: ทอง (Gold)
-                'linear-gradient(to right, #ef4444, #991b1b)', // 3: ทับทิม (Ruby/Red)
-                'linear-gradient(to right, #06b6d4, #0369a1)', // 4: เพชร (Diamond/Cyan-Blue)
+                'linear-gradient(to right, #6b7280, #374151)', // เริ่มต้น
+                'linear-gradient(to right, #9ca3af, #d1d5db)', // เงิน
+                'linear-gradient(to right, #fbbf24, #d97706)', // ทอง
+                'linear-gradient(to right, #ef4444, #991b1b)', // ทับทิม
+                'linear-gradient(to right, #06b6d4, #0369a1)', // เพชร
             ];
             const knownLevels = { 'เริ่มต้น': 0, 'เงิน': 1, 'ทอง': 2, 'ทับทิม': 3, 'เพชร': 4 };
-            let colorIndex = 0;
-            
-            if (response.level && knownLevels[response.level] !== undefined) {
-                colorIndex = knownLevels[response.level];
-            } else if (response.level) {
-                let hash = 0;
-                for (let i = 0; i < response.level.length; i++) hash = response.level.charCodeAt(i) + ((hash << 5) - hash);
-                colorIndex = Math.abs(hash) % levelColors.length;
-            }
+            let colorIndex = knownLevels[response.level] !== undefined ? knownLevels[response.level] : 0;
             lvlBadge.style.background = levelColors[colorIndex];
 
+            // 2. เคลียร์ข้อมูลการ์ดรอไว้ และขึ้นหน้าจอ Loading
             const rewardsContainer = document.getElementById('rewards-container');
             if (rewardsContainer) {
-                rewardsContainer.innerHTML = '';
-                if (response.rewards && response.rewards.length > 0) {
-                    availableRewardsList = response.rewards; 
-                    response.rewards.forEach((reward, index) => {
-                        // ปรับการแสดงผลการ์ด ให้แสดงแต้ม (และสามารถโชว์ป้ายเลเวลขั้นต่ำได้ ถ้าต้องการ)
-                        const card = `
-                        <div onclick="openRewardDetail(${index})" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer">
-                            <div class="aspect-square bg-gray-50 relative border-b border-gray-100">
-                                <img src="${reward.image}" alt="${reward.name}" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
-                                <div class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
-                                    ระดับ: ${reward.minLevel}
-                                </div>
-                            </div>
-                            <div class="p-3 flex-1 flex flex-col justify-between">
-                                <h4 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 leading-snug">${reward.name}</h4>
-                                <div class="flex items-center mt-auto">
-                                    <div class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1.5 rounded-lg w-full text-center border border-blue-100">
-                                        ใช้ ${Number(reward.points).toLocaleString()} แต้ม
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-                        rewardsContainer.insertAdjacentHTML('beforeend', card);
-                    });
-                } else {
-                    rewardsContainer.innerHTML = '<div class="col-span-2 text-center text-sm text-gray-500 py-8 bg-white rounded-2xl border border-gray-100">ไม่มีของรางวัลที่ท่านสามารถแลกได้ในขณะนี้</div>';
-                }
+                rewardsContainer.innerHTML = `
+                    <div class="col-span-2 text-center text-sm text-gray-400 py-8 bg-white rounded-2xl border border-gray-100 flex flex-col items-center justify-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        กำลังโหลดของรางวัล...
+                    </div>`;
             }
+            document.getElementById('my-rewards-available-container').innerHTML = '<div class="text-center text-sm text-gray-400 py-8">กำลังโหลดข้อมูลคูปอง...</div>';
 
-            myAvailableRewards = [];
-            myUsedRewards = [];
-            myExpiredRewards = [];
-            
-            if (response.myRewards && response.myRewards.length > 0) {
-                myAvailableRewards = response.myRewards.filter(r => r.status === '0');
-                myUsedRewards = response.myRewards.filter(r => r.status === '1');
-                myExpiredRewards = response.myRewards.filter(r => r.status === '2');
-
-                myAvailableRewards.sort((a, b) => {
-                    if (a.rawExpireDate === b.rawExpireDate) return b.points - a.points;
-                    return a.rawExpireDate - b.rawExpireDate;
-                });
-                myUsedRewards.sort((a, b) => b.points - a.points);
-                myExpiredRewards.sort((a, b) => b.points - a.points);
-            }
-
-            renderMyRewards(); 
-
+            // 3. ปิดหน้าล็อกอิน แล้วโชว์หน้าแรกทันที (เร็วขึ้น)
             if (!isSilent) {
                 setTimeout(() => {
                     document.getElementById('login-section').classList.add('hidden');
                     document.getElementById('bottom-nav').classList.remove('hidden');
                     switchTab('home');
                     switchMyRewardTab('available'); 
-                }, 400); 
+                }, 150); 
             }
+
+            // 4. สั่งดึงข้อมูลของรางวัลแบบแยกเบื้องหลัง (Lazy Load)
+            fetchAvailableRewardsAsync(response.level);
+            fetchMyRewardsAsync(response.customerId);
         }
 
+        // --- ฟังก์ชันดึง "ของรางวัลที่แลกได้" ---
+        function fetchAvailableRewardsAsync(levelName) {
+            callGasApi('getAvailableRewards', { level: levelName })
+                .then(res => {
+                    const rewardsContainer = document.getElementById('rewards-container');
+                    if (res.success && res.rewards && res.rewards.length > 0) {
+                        availableRewardsList = res.rewards;
+                        rewardsContainer.innerHTML = '';
+                        res.rewards.forEach((reward, index) => {
+                            const card = `
+                            <div onclick="openRewardDetail(${index})" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer">
+                                <div class="aspect-square bg-gray-50 relative border-b border-gray-100">
+                                    <img src="${reward.image}" alt="${reward.name}" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
+                                    <div class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
+                                        ระดับ: ${reward.minLevel}
+                                    </div>
+                                </div>
+                                <div class="p-3 flex-1 flex flex-col justify-between">
+                                    <h4 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 leading-snug">${reward.name}</h4>
+                                    <div class="flex items-center mt-auto">
+                                        <div class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1.5 rounded-lg w-full text-center border border-blue-100">
+                                            ใช้ ${Number(reward.points).toLocaleString()} แต้ม
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                            rewardsContainer.insertAdjacentHTML('beforeend', card);
+                        });
+                    } else {
+                        rewardsContainer.innerHTML = '<div class="col-span-2 text-center text-sm text-gray-500 py-8 bg-white rounded-2xl border border-gray-100">ไม่มีของรางวัลที่ท่านสามารถแลกได้ในขณะนี้</div>';
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to fetch available rewards", err);
+                    document.getElementById('rewards-container').innerHTML = '<div class="col-span-2 text-center text-sm text-red-500 py-8">โหลดข้อมูลล้มเหลว กรุณารีเฟรช</div>';
+                });
+        }
+
+        // --- ฟังก์ชันดึง "รางวัลของฉัน" ---
+        function fetchMyRewardsAsync(customerId) {
+            callGasApi('getMyRewards', { customerId: customerId })
+                .then(res => {
+                    myAvailableRewards = [];
+                    myUsedRewards = [];
+                    myExpiredRewards = [];
+                    
+                    if (res.success && res.myRewards && res.myRewards.length > 0) {
+                        myAvailableRewards = res.myRewards.filter(r => r.status === '0');
+                        myUsedRewards = res.myRewards.filter(r => r.status === '1');
+                        myExpiredRewards = res.myRewards.filter(r => r.status === '2');
+
+                        myAvailableRewards.sort((a, b) => {
+                            if (a.rawExpireDate === b.rawExpireDate) return b.points - a.points;
+                            return a.rawExpireDate - b.rawExpireDate;
+                        });
+                        myUsedRewards.sort((a, b) => b.points - a.points);
+                        myExpiredRewards.sort((a, b) => b.points - a.points);
+                    }
+                    renderMyRewards(); 
+                })
+                .catch(err => console.error("Failed to fetch my rewards", err));
+        }
+
+        // --- ฟังก์ชันเรนเดอร์การ์ดในหน้า "รางวัลของฉัน" ---
         function renderMyRewards() {
             const availContainer = document.getElementById('my-rewards-available-container');
             const usedContainer = document.getElementById('my-rewards-used-container');
