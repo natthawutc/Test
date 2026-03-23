@@ -589,13 +589,15 @@
             document.getElementById('disp-volume').innerText = volumeDisplay;
 
             const lvlBadge = document.getElementById('disp-level');
+            // อัปเดตสีเลเวลให้ตรงตามโจทย์: เริ่มต้น เงิน ทอง ทับทิม เพชร
             const levelColors = [
-                'linear-gradient(to right, #9ca3af, #6b7280)', 'linear-gradient(to right, #cbd5e1, #94a3b8)', 
-                'linear-gradient(to right, #fbbf24, #f59e0b)', 'linear-gradient(to right, #a855f7, #7e22ce)', 
-                'linear-gradient(to right, #1f2937, #000000)', 'linear-gradient(to right, #ef4444, #b91c1c)', 
-                'linear-gradient(to right, #10b981, #047857)', 'linear-gradient(to right, #3b82f6, #1d4ed8)'  
+                'linear-gradient(to right, #6b7280, #374151)', // 0: เริ่มต้น (Dark Gray)
+                'linear-gradient(to right, #9ca3af, #d1d5db)', // 1: เงิน (Silver)
+                'linear-gradient(to right, #fbbf24, #d97706)', // 2: ทอง (Gold)
+                'linear-gradient(to right, #ef4444, #991b1b)', // 3: ทับทิม (Ruby/Red)
+                'linear-gradient(to right, #06b6d4, #0369a1)', // 4: เพชร (Diamond/Cyan-Blue)
             ];
-            const knownLevels = { 'เริ่มต้น': 0, 'เงิน': 1, 'ทอง': 2, 'อัญมณี': 3, 'สูงสุด': 4 };
+            const knownLevels = { 'เริ่มต้น': 0, 'เงิน': 1, 'ทอง': 2, 'ทับทิม': 3, 'เพชร': 4 };
             let colorIndex = 0;
             
             if (response.level && knownLevels[response.level] !== undefined) {
@@ -613,10 +615,14 @@
                 if (response.rewards && response.rewards.length > 0) {
                     availableRewardsList = response.rewards; 
                     response.rewards.forEach((reward, index) => {
+                        // ปรับการแสดงผลการ์ด ให้แสดงแต้ม (และสามารถโชว์ป้ายเลเวลขั้นต่ำได้ ถ้าต้องการ)
                         const card = `
                         <div onclick="openRewardDetail(${index})" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer">
                             <div class="aspect-square bg-gray-50 relative border-b border-gray-100">
                                 <img src="${reward.image}" alt="${reward.name}" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
+                                <div class="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
+                                    ระดับ: ${reward.minLevel}
+                                </div>
                             </div>
                             <div class="p-3 flex-1 flex flex-col justify-between">
                                 <h4 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 leading-snug">${reward.name}</h4>
@@ -630,7 +636,7 @@
                         rewardsContainer.insertAdjacentHTML('beforeend', card);
                     });
                 } else {
-                    rewardsContainer.innerHTML = '<div class="col-span-2 text-center text-sm text-gray-500 py-8 bg-white rounded-2xl border border-gray-100">ไม่มีของรางวัลในขณะนี้</div>';
+                    rewardsContainer.innerHTML = '<div class="col-span-2 text-center text-sm text-gray-500 py-8 bg-white rounded-2xl border border-gray-100">ไม่มีของรางวัลที่ท่านสามารถแลกได้ในขณะนี้</div>';
                 }
             }
 
