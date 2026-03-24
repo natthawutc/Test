@@ -2,16 +2,7 @@
 const SPREADSHEET_ID = '1L6TmseqPMRBdG5hP9WvK0xZ-pgvRmwBJYVFNispHEU4';
 
 // กำหนดเวอร์ชันของแอปพลิเคชัน
-const APP_VERSION = "Version 1.0.1";
-
-// กำหนดลำดับชั้นของเลเวลไว้เป็น Global เพื่อเรียกใช้ได้หลายฟังก์ชัน
-const LEVEL_HIERARCHY = {
-  'เริ่มต้น': 0,
-  'เงิน': 1,
-  'ทอง': 2,
-  'ทับทิม': 3,
-  'เพชร': 4
-};
+const APP_VERSION = "Version 1.0.0";
 
 // =========================================================================
 // 1. ฟังก์ชันหลักสำหรับรับ Request แบบ POST จาก Frontend (Github Pages)
@@ -32,9 +23,8 @@ function doPost(e) {
       result = { success: true, version: APP_VERSION };
     } else if (action === "loginUser") {
       result = loginUser(data.phone, data.password);
-    } else if (action === "getAvailableRewards") {
-      result = getAvailableRewards(data.level);
     } else if (action === "getMyRewards") {
+      // เพิ่ม Action สำหรับโหลดรางวัลของฉันเบื้องหลัง
       result = getMyRewards(data.customerId);
     } else if (action === "redeemReward") {
       result = redeemReward(data.customerId, data.rewardName, data.points, data.rewardImage, data.rewardCode);
@@ -83,7 +73,7 @@ function getDriveImageUrl(url) {
   }
 }
 
-// ฟังก์ชันตรวจสอบการเข้าสู่ระบบ (ปรับให้เร็วขึ้น ดึงเฉพาะข้อมูลพื้นฐาน)
+// ฟังก์ชันตรวจสอบการเข้าสู่ระบบ (โหลดเฉพาะข้อมูลพื้นฐาน + ของรางวัลหน้าหลัก)
 function loginUser(phone, password) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -113,52 +103,80 @@ function loginUser(phone, password) {
       return { success: false, message: 'เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง' };
     }
 
-    return userData; // ส่งกลับทันทีโดยยังไม่ดึงของรางวัล
-    
-  } catch (error) {
-    return { success: false, message: 'เกิดข้อผิดพลาด: ' + error.toString() };
-  }
-}
-
-// ฟังก์ชันดึงของรางวัลที่แลกได้ (ทำงานเบื้องหลัง)
-function getAvailableRewards(userLevelName) {
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    // --- 1. ดึงข้อมูลของรางวัลที่แลกได้ (สำหรับหน้าหลัก) ---
     const promoSheet = ss.getSheetByName('จัดการโปรโมชัน');
     let rewards = [];
-    
-    if (!promoSheet) return { success: true, rewards: [] };
-
-    let userLevelValue = LEVEL_HIERARCHY[String(userLevelName).trim()] !== undefined ? LEVEL_HIERARCHY[String(userLevelName).trim()] : 0;
-    const lastRow = promoSheet.getLastRow();
-    
-    if (lastRow >= 2) {
-      const promoData = promoSheet.getRange(2, 1, lastRow - 1, 8).getValues();
-      for (let j = 0; j < promoData.length; j++) {
-        if (promoData[j][0] && promoData[j][6] === true) {
-          let requiredLevelName = String(promoData[j][4] || 'เริ่มต้น').trim();
-          let requiredLevelValue = LEVEL_HIERARCHY[requiredLevelName] !== undefined ? LEVEL_HIERARCHY[requiredLevelName] : 0;
-
-          if (userLevelValue >= requiredLevelValue) {
+    if (promoSheet) {
+      const lastRow = promoSheet.getLastRow();
+      if (lastRow >= 2) {
+        const promoData = promoSheet.getRange(2, 1, lastRow - 1, 8).getValues();
+        for (let j = 0; j < promoData.length; j++) {
+          
+          if (promoData[j][0] && promoData[j][6] === true) {
             rewards.push({
               name: promoData[j][0],                             
               image: getDriveImageUrl(promoData[j][1]),          
               condition: promoData[j][2] || '-',                 
               points: promoData[j][3],
-              minLevel: requiredLevelName,
               rewardCode: promoData[j][7] || '' 
             });
           }
         }
       }
     }
-    return { success: true, rewards: rewards };
+    userData.rewards = rewards; 
+
+    // --- 2. ดึงข้อมูล "รางวัลของฉัน" จาก App-02 (โหลดพร้อมกันทีเดียว) ---
+    const myRewardsSheet = ss.getSheetByName('App-02');
+    let myRewards = [];
+
+    if (myRewardsSheet) {
+      const lastRowApp02 = myRewardsSheet.getLastRow();
+      if (lastRowApp02 >= 2) {
+        // ดึงข้อมูล 2 แบบ: ค่าดิบ และ ค่าแสดงผล
+        const rangeApp02 = myRewardsSheet.getRange(2, 1, lastRowApp02 - 1, 9);
+        const app02Data = rangeApp02.getValues();
+        const app02DisplayData = rangeApp02.getDisplayValues();
+
+        for (let k = 0; k < app02Data.length; k++) {
+          if (String(app02Data[k][0]).trim() === String(userData.customerId).trim()) {
+            
+            let expDate = app02DisplayData[k][5] || 'ไม่มีวันหมดอายุ'; 
+            let rawExpireDate = 9999999999999; 
+            if (app02Data[k][5] instanceof Date) {
+              rawExpireDate = app02Data[k][5].getTime();
+            }
+
+            let redeemDate = app02DisplayData[k][6] || '-'; 
+            let usedDate = app02DisplayData[k][7] || '-';
+
+            let status = String(app02Data[k][8]).trim(); 
+
+            myRewards.push({
+              couponCode: app02Data[k][1],
+              name: app02Data[k][2],
+              points: Number(app02Data[k][3]) || 0,
+              image: getDriveImageUrl(app02Data[k][4]),
+              expireDate: expDate,
+              rawExpireDate: rawExpireDate,
+              redeemDate: redeemDate,
+              usedDate: usedDate,
+              status: status
+            });
+          }
+        }
+      }
+    }
+    userData.myRewards = myRewards;
+
+    return userData;
+    
   } catch (error) {
-    return { success: false, message: error.toString(), rewards: [] };
+    return { success: false, message: 'เกิดข้อผิดพลาด: ' + error.toString() };
   }
 }
 
-// ฟังก์ชันดึงประวัติรางวัลของฉัน (ทำงานเบื้องหลัง)
+// ฟังก์ชันดึงประวัติรางวัลของฉัน (โหลดเบื้องหลัง) - ไม่ได้ใช้แล้วแต่เก็บไว้ได้
 function getMyRewards(customerId) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -169,46 +187,22 @@ function getMyRewards(customerId) {
 
     const lastRowApp02 = myRewardsSheet.getLastRow();
     if (lastRowApp02 >= 2) {
-      const app02Data = myRewardsSheet.getRange(2, 1, lastRowApp02 - 1, 9).getValues();
+      // ดึงข้อมูล 2 แบบ: ค่าดิบ และ ค่าแสดงผล
+      const rangeApp02 = myRewardsSheet.getRange(2, 1, lastRowApp02 - 1, 9);
+      const app02Data = rangeApp02.getValues();
+      const app02DisplayData = rangeApp02.getDisplayValues();
 
       for (let k = 0; k < app02Data.length; k++) {
         if (String(app02Data[k][0]).trim() === String(customerId).trim()) {
           
-          let expDate = app02Data[k][5]; 
-          let rawExpireDate = 9999999999999;
-          if (expDate instanceof Date) {
-            rawExpireDate = expDate.getTime();
-            const d = expDate.getDate().toString().padStart(2, '0');
-            const m = (expDate.getMonth() + 1).toString().padStart(2, '0');
-            const y = expDate.getFullYear() + 543; 
-            expDate = `${d}/${m}/${y}`;
-          } else {
-            expDate = expDate ? String(expDate) : 'ไม่มีวันหมดอายุ';
+          let expDate = app02DisplayData[k][5] || 'ไม่มีวันหมดอายุ'; 
+          let rawExpireDate = 9999999999999; 
+          if (app02Data[k][5] instanceof Date) {
+            rawExpireDate = app02Data[k][5].getTime();
           }
 
-          let redeemDate = app02Data[k][6]; 
-          if (redeemDate instanceof Date) {
-            const d = redeemDate.getDate().toString().padStart(2, '0');
-            const m = (redeemDate.getMonth() + 1).toString().padStart(2, '0');
-            const y = redeemDate.getFullYear() + 543; 
-            const hh = redeemDate.getHours().toString().padStart(2, '0');
-            const mm = redeemDate.getMinutes().toString().padStart(2, '0');
-            redeemDate = `${d}/${m}/${y}, ${hh}:${mm}`;
-          } else {
-            redeemDate = redeemDate ? String(redeemDate) : '-';
-          }
-
-          let usedDate = app02Data[k][7];
-          if (usedDate instanceof Date) {
-            const d = usedDate.getDate().toString().padStart(2, '0');
-            const m = (usedDate.getMonth() + 1).toString().padStart(2, '0');
-            const y = usedDate.getFullYear() + 543; 
-            const hh = usedDate.getHours().toString().padStart(2, '0');
-            const mm = usedDate.getMinutes().toString().padStart(2, '0');
-            usedDate = `${d}/${m}/${y}, ${hh}:${mm}`;
-          } else {
-            usedDate = usedDate ? String(usedDate) : '-';
-          }
+          let redeemDate = app02DisplayData[k][6] || '-'; 
+          let usedDate = app02DisplayData[k][7] || '-';
 
           let status = String(app02Data[k][8]).trim(); 
 
