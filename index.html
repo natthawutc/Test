@@ -158,7 +158,14 @@
 
     <!-- 2.1 หน้า รางวัลของฉัน (แบบมี Tab ใช้งานได้ / ใช้แล้ว / หมดอายุ) -->
     <div id="rewards-page" class="w-full max-w-md hidden opacity-0 transition-opacity duration-300 flex flex-col h-[calc(100vh-6rem)]">
-        <h2 class="text-2xl font-bold text-gray-800 mb-3 px-2 flex-shrink-0">รางวัลของฉัน</h2>
+        <div class="flex justify-between items-center mb-3 px-2 flex-shrink-0">
+            <h2 class="text-2xl font-bold text-gray-800">รางวัลของฉัน</h2>
+            <button onclick="refreshMyRewards()" class="text-blue-600 hover:bg-blue-100 p-2 rounded-full transition-colors flex items-center justify-center bg-blue-50 shadow-sm" title="รีเฟรชข้อมูล">
+                <svg id="refresh-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </button>
+        </div>
         
         <!-- แถบเมนูสถานะ (ด้านบน) -->
         <div class="flex bg-gray-200/60 p-1 rounded-xl mb-4 mx-2 flex-shrink-0">
@@ -1021,6 +1028,46 @@
                 closeConfirmPwd();
                 showMsg('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
             });
+        }
+
+        // ฟังก์ชันสำหรับรีเฟรชข้อมูล "รางวัลของฉัน" โดยเฉพาะ
+        function refreshMyRewards() {
+            if (!currentUser) return;
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('animate-spin'); // ให้ไอคอนหมุนระหว่างรอ
+            
+            callGasApi('getMyRewards', { customerId: currentUser.customerId })
+                .then(response => {
+                    icon.classList.remove('animate-spin');
+                    if (response.success) {
+                        // ล้างข้อมูลเดิมและเรียงข้อมูลใหม่
+                        myAvailableRewards = [];
+                        myUsedRewards = [];
+                        myExpiredRewards = [];
+                        
+                        if (response.myRewards && response.myRewards.length > 0) {
+                            myAvailableRewards = response.myRewards.filter(r => r.status === '0');
+                            myUsedRewards = response.myRewards.filter(r => r.status === '1');
+                            myExpiredRewards = response.myRewards.filter(r => r.status === '2');
+
+                            myAvailableRewards.sort((a, b) => {
+                                if (a.rawExpireDate === b.rawExpireDate) return b.points - a.points;
+                                return a.rawExpireDate - b.rawExpireDate;
+                            });
+                            myUsedRewards.sort((a, b) => b.points - a.points);
+                            myExpiredRewards.sort((a, b) => b.points - a.points);
+                        }
+                        
+                        // สร้างรายการคูปองใหม่บนหน้าจอ
+                        renderMyRewards();
+                    } else {
+                        showMsg('รีเฟรชไม่สำเร็จ', response.message || 'ไม่สามารถดึงข้อมูลใหม่ได้');
+                    }
+                })
+                .catch(error => {
+                    icon.classList.remove('animate-spin');
+                    showMsg('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อรีเฟรชได้');
+                });
         }
 
         // ดึงข้อมูลเวอร์ชันเมื่อโหลดหน้าเว็บเสร็จ
