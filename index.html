@@ -30,8 +30,7 @@
         }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        /* ทำให้โหลดดิ้งสมูทและเป็นธรรมชาติขึ้น */
-        .progress-smooth { transition: width 0.4s ease-out; }
+        .progress-smooth { transition: width 50ms linear; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start pt-8 px-4 pb-24">
@@ -86,7 +85,7 @@
 
             <div id="progress-container" class="hidden w-full mt-2">
                 <div class="flex justify-between text-xs font-semibold text-blue-800 mb-1">
-                    <span id="progress-label">กำลังโหลด...</span>
+                    <span id="progress-label">สถานะข้อมูล...</span>
                     <span id="progress-text">0%</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
@@ -423,6 +422,7 @@
         let savedPassword = '';
         let loginProgressInterval = null;
 
+        // ฟังก์ชันหลักสำหรับสื่อสารกับ Backend (Fetch API)
         async function callGasApi(action, data = {}) {
             if (GAS_WEBAPP_URL === "YOUR_GAS_WEB_APP_URL_HERE") {
                 throw new Error("กรุณาใส่ URL ของ Google Apps Script (GAS_WEBAPP_URL) ในโค้ดก่อนใช้งาน!");
@@ -454,6 +454,7 @@
             document.getElementById('btnText').innerText = 'เข้าสู่ระบบ';
             document.getElementById('progress-container').classList.add('hidden');
             const progBar = document.getElementById('progress-bar');
+            progBar.style.transitionDuration = '0ms'; 
             progBar.style.width = '0%';
             document.getElementById('progress-text').innerText = '0%';
         }
@@ -491,29 +492,26 @@
                 const progLabel = document.getElementById('progress-label');
                 
                 progLabel.innerText = 'กำลังตรวจสอบสิทธิ์...';
+                progBar.style.transitionDuration = '100ms'; 
                 
-                // เริ่มต้นที่ 5%
-                let currentProgress = 5;
-                progBar.style.width = currentProgress + '%';
-                progText.innerText = currentProgress + '%';
+                let currentProgress = 0;
                 
                 if (loginProgressInterval) clearInterval(loginProgressInterval);
-                // ขยับทีละเยอะขึ้น และเว้นช่วง 300ms ให้ CSS ช่วยทำสมูท
                 loginProgressInterval = setInterval(() => {
-                    if (currentProgress < 85) {
-                        currentProgress += Math.floor(Math.random() * 8) + 4; // สุ่มเพิ่ม 4-11%
-                        if(currentProgress > 85) currentProgress = 85;
+                    if (currentProgress < 90) {
+                        currentProgress += 1;
                         progBar.style.width = currentProgress + '%';
                         progText.innerText = currentProgress + '%';
                         
-                        if(currentProgress >= 40) progLabel.innerText = 'กำลังดาวน์โหลดข้อมูลทั้งหมด...';
+                        if(currentProgress === 40) progLabel.innerText = 'กำลังดาวน์โหลดข้อมูลทั้งหมด...';
                     }
-                }, 300);
+                }, 15);
 
             } else {
                 phone = savedPhone; password = savedPassword;
             }
 
+            // เรียกใช้ API โหลดข้อมูลทั้งหมดในรอบเดียว
             callGasApi('loginUser', { phone: phone, password: password })
                 .then(response => {
                     if (!isSilent) clearInterval(loginProgressInterval);
@@ -543,6 +541,7 @@
                 
                 if (response.success) {
                     progLabel.innerText = 'เสร็จสมบูรณ์!';
+                    progBar.style.transitionDuration = '100ms'; 
                     progBar.style.width = '100%'; 
                     progText.innerText = '100%';
                 } else {
@@ -556,6 +555,7 @@
 
             currentUser = response;
             
+            // 1. อัปเดตข้อมูลหน้าหลัก
             let cleanPoints = String(response.points || '0').replace(/,/g, '');
             let parsedPoints = parseFloat(cleanPoints);
             document.getElementById('disp-points').innerText = isNaN(parsedPoints) ? '0' : parsedPoints.toLocaleString('en-US');
@@ -575,18 +575,20 @@
             }
             document.getElementById('disp-volume').innerText = volumeDisplay;
 
+            // อัปเดตสีเลเวล
             const lvlBadge = document.getElementById('disp-level');
             const levelColors = [
-                'linear-gradient(to right, #6b7280, #374151)', 
-                'linear-gradient(to right, #9ca3af, #d1d5db)', 
-                'linear-gradient(to right, #fbbf24, #d97706)', 
-                'linear-gradient(to right, #ef4444, #991b1b)', 
-                'linear-gradient(to right, #06b6d4, #0369a1)', 
+                'linear-gradient(to right, #6b7280, #374151)', // เริ่มต้น
+                'linear-gradient(to right, #9ca3af, #d1d5db)', // เงิน
+                'linear-gradient(to right, #fbbf24, #d97706)', // ทอง
+                'linear-gradient(to right, #ef4444, #991b1b)', // ทับทิม
+                'linear-gradient(to right, #06b6d4, #0369a1)', // เพชร
             ];
             const knownLevels = { 'เริ่มต้น': 0, 'เงิน': 1, 'ทอง': 2, 'ทับทิม': 3, 'เพชร': 4 };
             let colorIndex = knownLevels[response.level] !== undefined ? knownLevels[response.level] : 0;
             lvlBadge.style.background = levelColors[colorIndex];
 
+            // 2. แสดงการ์ดของรางวัล (หน้าหลัก)
             const rewardsContainer = document.getElementById('rewards-container');
             if (rewardsContainer) {
                 rewardsContainer.innerHTML = '';
@@ -614,6 +616,7 @@
                 }
             }
 
+            // 3. จัดการข้อมูลคูปอง และ Render รอไว้ทันที
             myAvailableRewards = [];
             myUsedRewards = [];
             myExpiredRewards = [];
@@ -633,13 +636,14 @@
 
             renderMyRewards();
 
+            // 4. หลังจากดึงและ Render ทั้งหมดเสร็จ ให้ปิดหน้าล็อกอินแล้วเข้าหน้าแรก
             if (!isSilent) {
                 setTimeout(() => {
                     document.getElementById('login-section').classList.add('hidden');
                     document.getElementById('bottom-nav').classList.remove('hidden');
                     switchTab('home');
                     switchMyRewardTab('available'); 
-                }, 400); 
+                }, 300); // หน่วงเวลาเล็กน้อยเพื่อให้กราฟิกหลอดโหลดวิ่งเต็ม 100% แบบสวยงาม
             }
         }
 
@@ -867,37 +871,11 @@
                 closeConfirmModal();
                 
                 if (response.success) {
-                    // --- 1. อัปเดตคะแนนที่หน้าจอทันที ---
                     currentUser.points = response.remainingPoints;
                     document.getElementById('disp-points').innerText = Number(currentUser.points).toLocaleString();
-                    
-                    // --- 2. อัปเดตรายการ "รางวัลของฉัน (ใช้งานได้)" แบบ Real-time ทันที ---
-                    const today = new Date();
-                    const dd = String(today.getDate()).padStart(2, '0');
-                    const mm = String(today.getMonth() + 1).padStart(2, '0');
-                    const yyyy = today.getFullYear() + 543; // จำลองเป็นปี พ.ศ. ให้เหมือน App-02
-
-                    const newlyRedeemedReward = {
-                        couponCode: response.couponCode,
-                        name: reward.name,
-                        points: Number(reward.points),
-                        image: reward.image,
-                        expireDate: 'ไม่มีวันหมดอายุ', // ค่า Default
-                        rawExpireDate: 9999999999999,
-                        redeemDate: `${dd}/${mm}/${yyyy}`, // วันที่แสดงผลแบบจำลอง
-                        usedDate: '-',
-                        status: '0' // 0 = ใช้งานได้
-                    };
-
-                    // นำข้อมูลใหม่ไปต่อท้ายบนสุดของอาเรย์ myAvailableRewards ทันที
-                    myAvailableRewards.unshift(newlyRedeemedReward);
-                    renderMyRewards(); // สั่งให้ Render หน้า "รางวัลของฉัน" ใหม่อีกรอบทันที
-
-                    showMsg('แลกสำเร็จ!', `คุณได้รับรหัสคูปอง: ${response.couponCode}\n\nกรุณาตรวจสอบในเมนู "รางวัลของฉัน"`);
+                    showMsg('แลกสำเร็จ!', `คุณได้รับรหัสคูปอง: ${response.couponCode}\n\nกรุณาแคปหน้าจอคูปองนี้ไว้เป็นหลักฐาน`);
                     closeRewardDetail();
-
-                    // --- 3. สั่งซิงค์หลังบ้านแบบเงียบๆ ---
-                    processLogin(true); 
+                    processLogin(true); // รีโหลดข้อมูลแบบเงียบ
                 } else {
                     showMsg('ไม่สามารถแลกได้', response.message);
                 }
@@ -1018,6 +996,7 @@
             });
         }
 
+        // ดึงข้อมูลเวอร์ชันเมื่อโหลดหน้าเว็บเสร็จ
         document.addEventListener('DOMContentLoaded', () => {
             if (GAS_WEBAPP_URL !== "YOUR_GAS_WEB_APP_URL_HERE" && GAS_WEBAPP_URL.trim() !== "") {
                 callGasApi('getAppVersion')
