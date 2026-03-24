@@ -30,7 +30,10 @@
         }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        .progress-smooth { transition: width 50ms linear; }
+        /* ทำให้ Progress Bar เคลื่อนไหวลื่นไหลมากขึ้น */
+        .progress-smooth { 
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start pt-8 px-4 pb-24">
@@ -454,7 +457,6 @@
             document.getElementById('btnText').innerText = 'เข้าสู่ระบบ';
             document.getElementById('progress-container').classList.add('hidden');
             const progBar = document.getElementById('progress-bar');
-            progBar.style.transitionDuration = '0ms'; 
             progBar.style.width = '0%';
             document.getElementById('progress-text').innerText = '0%';
         }
@@ -492,20 +494,22 @@
                 const progLabel = document.getElementById('progress-label');
                 
                 progLabel.innerText = 'กำลังตรวจสอบสิทธิ์...';
-                progBar.style.transitionDuration = '100ms'; 
                 
                 let currentProgress = 0;
-                
                 if (loginProgressInterval) clearInterval(loginProgressInterval);
+                
+                // คำนวณความเนียนของหลอดโหลด
                 loginProgressInterval = setInterval(() => {
                     if (currentProgress < 90) {
-                        currentProgress += 1;
+                        currentProgress += (Math.random() * 2 + 0.5); // เพิ่มแบบสุ่มทีละนิด
+                        if(currentProgress > 90) currentProgress = 90;
                         progBar.style.width = currentProgress + '%';
-                        progText.innerText = currentProgress + '%';
+                        progText.innerText = Math.floor(currentProgress) + '%';
                         
-                        if(currentProgress === 40) progLabel.innerText = 'กำลังดาวน์โหลดข้อมูลทั้งหมด...';
+                        if(currentProgress > 40 && currentProgress < 80) progLabel.innerText = 'กำลังดาวน์โหลดข้อมูลทั้งหมด...';
+                        if(currentProgress >= 80) progLabel.innerText = 'เกือบเสร็จแล้ว...';
                     }
-                }, 15);
+                }, 80);
 
             } else {
                 phone = savedPhone; password = savedPassword;
@@ -541,7 +545,6 @@
                 
                 if (response.success) {
                     progLabel.innerText = 'เสร็จสมบูรณ์!';
-                    progBar.style.transitionDuration = '100ms'; 
                     progBar.style.width = '100%'; 
                     progText.innerText = '100%';
                 } else {
@@ -643,7 +646,7 @@
                     document.getElementById('bottom-nav').classList.remove('hidden');
                     switchTab('home');
                     switchMyRewardTab('available'); 
-                }, 300); // หน่วงเวลาเล็กน้อยเพื่อให้กราฟิกหลอดโหลดวิ่งเต็ม 100% แบบสวยงาม
+                }, 400); // หน่วงเวลาเพื่อให้โหลดเสร็จสวยงาม
             }
         }
 
@@ -848,6 +851,7 @@
 
         function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
 
+        // ปรับปรุงกระบวนการแลกรางวัล (Real-time Optimistic Update)
         function processRedeem() {
             if (selectedRewardIndex === null || !currentUser) return;
             
@@ -871,11 +875,34 @@
                 closeConfirmModal();
                 
                 if (response.success) {
+                    // อัปเดตคะแนนทันทีบนหน้าจอ
                     currentUser.points = response.remainingPoints;
                     document.getElementById('disp-points').innerText = Number(currentUser.points).toLocaleString();
-                    showMsg('แลกสำเร็จ!', `คุณได้รับรหัสคูปอง: ${response.couponCode}\n\nกรุณาแคปหน้าจอคูปองนี้ไว้เป็นหลักฐาน`);
+                    
+                    // --- เพิ่มข้อมูลรางวัลใหม่แบบ Real-time เข้าไปในหน้า "ใช้งานได้" ทันที ---
+                    const newRewardItem = {
+                        couponCode: response.couponCode,
+                        name: reward.name,
+                        points: reward.points,
+                        image: reward.image,
+                        expireDate: 'รอระบบยืนยัน...', // จะอัปเดตเป็นวันหมดอายุจริงเมื่อซิงค์ข้อมูลรอบถัดไป
+                        rawExpireDate: new Date().getTime() + (365*24*60*60*1000), // ดันให้อยู่บนสุด
+                        redeemDate: response.redeemDateStr || new Date().toLocaleDateString('th-TH'),
+                        usedDate: '-',
+                        status: '0' 
+                    };
+                    
+                    // แทรกเข้าที่ตำแหน่งแรกของ List
+                    myAvailableRewards.unshift(newRewardItem);
+                    // สั่ง Render หน้าต่างรางวัลของฉันใหม่ทันที
+                    renderMyRewards();
+                    // ----------------------------------------------------------------------
+                    
+                    showMsg('แลกสำเร็จ!', `คุณได้รับรหัสคูปอง: ${response.couponCode}\n\nคูปองของคุณสามารถตรวจสอบได้ในเมนู "รางวัลของฉัน"`);
                     closeRewardDetail();
-                    processLogin(true); // รีโหลดข้อมูลแบบเงียบ
+                    
+                    // โหลดข้อมูลแบบเงียบเบื้องหลัง เพื่อซิงค์กับระบบอีกครั้ง
+                    processLogin(true); 
                 } else {
                     showMsg('ไม่สามารถแลกได้', response.message);
                 }
