@@ -2,9 +2,11 @@
 const SPREADSHEET_ID = '1L6TmseqPMRBdG5hP9WvK0xZ-pgvRmwBJYVFNispHEU4';
 
 // กำหนดเวอร์ชันของแอปพลิเคชัน
-const APP_VERSION = "Version 1.0.0";
+const APP_VERSION = "Version 1.1.0";
 
+// =========================================================================
 // 1. ฟังก์ชันหลักสำหรับรับ Request แบบ POST จาก Frontend (Github Pages)
+// =========================================================================
 function doPost(e) {
   try {
     // แปลงข้อมูลที่ส่งมาให้อยู่ในรูปแบบ JSON Object
@@ -16,58 +18,26 @@ function doPost(e) {
 
     // 2. ระบบ Router: แยกการทำงานตาม Action ที่ส่งมา
     if (action === "testConnection") {
-      result = { 
-        success: true, 
-        message: "เชื่อมต่อ Google Apps Script สำเร็จ!", 
-        version: APP_VERSION,
-        received: data 
-      };
-      
+      result = { success: true, message: "เชื่อมต่อ Google Apps Script สำเร็จ!", version: APP_VERSION, received: data };
     } else if (action === "getAppVersion") {
-      // ดึงข้อมูลเวอร์ชันไปแสดงผล
-      result = {
-        success: true,
-        version: APP_VERSION
-      };
-
-    } else if (action === "verifyLogin") {
-      // ตรวจสอบการล็อกอิน
-      result = verifyLogin(data.empId);
-
-    } else if (action === "searchCoupon") {
-      // ค้นหาคูปอง
-      result = searchCouponData(data.couponCode);
-
-    } else if (action === "saveUsage") {
-      // บันทึกการใช้งานคูปอง
-      result = saveCouponUsage(data.empId, data.couponCode, data.points);
-
-    } else if (action === "getCustomerList") {
-      // ดึงรายชื่อลูกค้าสำหรับ Dropdown
-      result = getCustomerList();
-
-    } else if (action === "searchCustomerRewards") {
-      // ค้นหาข้อมูลของรางวัลของลูกค้า
-      result = searchCustomerRewards(data.customerId);
-
+      result = { success: true, version: APP_VERSION };
+    } else if (action === "loginUser") {
+      result = loginUser(data.phone, data.password);
+    } else if (action === "getMyRewards") {
+      result = getMyRewards(data.customerId);
+    } else if (action === "redeemReward") {
+      result = redeemReward(data.customerId, data.rewardName, data.points, data.rewardImage, data.rewardCode);
+    } else if (action === "changeUserPassword") {
+      result = changeUserPassword(data.customerId, data.newPassword);
     } else {
-      // กรณีส่ง Action มาผิด
-      result = { 
-        success: false, 
-        message: "ไม่พบ Action ที่ระบุ" 
-      };
+      result = { success: false, message: "ไม่พบ Action ที่ระบุ" };
     }
 
     // 3. ส่งข้อมูลกลับไปยัง Frontend ในรูปแบบ JSON
-    return ContentService.createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
-    // จัดการ Error กรณีเกิดข้อผิดพลาดรุนแรง
-    return ContentService.createTextOutput(JSON.stringify({ 
-      success: false, 
-      message: "Server Error: " + error.message 
-    })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Server Error: " + error.message })).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -76,162 +46,261 @@ function doGet(e) {
   return ContentService.createTextOutput("Backend API is running properly. Version: " + APP_VERSION + " | Use POST method to interact.");
 }
 
-// ==========================================
-// ฟังก์ชันจัดการข้อมูล
-// ==========================================
+// =========================================================================
+// ฟังก์ชันการทำงานหลัก (Business Logic)
+// =========================================================================
 
-// ฟังก์ชันตรวจสอบการล็อกอิน
-function verifyLogin(empId) {
+// ฟังก์ชันสำหรับแปลงลิงก์ Google Drive เป็นลิงก์รูปภาพ Thumbnail
+function getDriveImageUrl(url) {
+  const defaultGiftBoxUrl = 'https://img.icons8.com/color/400/gift.png';
+
+  if (!url || String(url).trim() === '') {
+    return defaultGiftBoxUrl;
+  }
+  
   try {
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('DB-พนักงาน');
-    const data = sheet.getDataRange().getDisplayValues();
-    
-    // เริ่มค้นหาจากแถวที่ 2 (index 1) ข้าม Header
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][1] === empId) { // คอลัมน์ B คือ index 1
-        return { success: true, message: "เข้าสู่ระบบสำเร็จ" };
-      }
+    if (String(url).match(/\.(jpeg|jpg|png|gif)$/i) != null) {
+      return url;
     }
-    return { success: false, message: "ไม่พบรหัสพนักงานนี้ในระบบ" };
-  } catch (error) {
-    return { success: false, message: "เกิดข้อผิดพลาด: " + error.message };
-  }
-}
-
-// ฟังก์ชันค้นหาข้อมูลคูปอง
-function searchCouponData(couponCode) {
-  try {
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('App-02');
-    const data = sheet.getDataRange().getDisplayValues();
-    
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][1] === couponCode) { // คอลัมน์ B คือ index 1 (รหัสคูปอง)
-        const status = data[i][8]; // คอลัมน์ I คือ index 8 (สถานะ: 1=ใช้แล้ว, 2=หมดอายุ)
-        
-        // เช็คสถานะคูปองก่อนคืนค่าข้อมูล
-        if (status === '1') {
-          return { success: true, found: false, message: "คูปองนี้ถูกใช้งานไปแล้ว ไม่สามารถรับสิทธิ์ซ้ำได้" };
-        }
-        if (status === '2') {
-          return { success: true, found: false, message: "คูปองนี้หมดอายุแล้ว ไม่สามารถใช้งานได้" };
-        }
-
-        // ถ้าสถานะปกติ (ไม่ใช่ 1 และ 2) ให้ส่งข้อมูลกลับไปแสดงเพื่อแลกรับรางวัล
-        return {
-          success: true,
-          found: true,
-          name: data[i][2], // คอลัมน์ C (ชื่อของรางวัล)
-          points: data[i][3], // คอลัมน์ D (แต้มที่ใช้แลก)
-          image: convertDriveUrl(data[i][4]), // คอลัมน์ E (รูปของรางวัล)
-          expiry: data[i][5] // คอลัมน์ F (วันหมดอายุ)
-        };
-      }
+    const match = String(url).match(/[-\w]{25,}/);
+    if (match) {
+      return 'https://drive.google.com/thumbnail?id=' + match[0] + '&sz=w500';
     }
-    return { success: true, found: false, message: "ไม่พบรหัสคูปองนี้" };
+    return defaultGiftBoxUrl;
   } catch (error) {
-    return { success: false, found: false, message: "เกิดข้อผิดพลาด: " + error.message };
+    return defaultGiftBoxUrl;
   }
 }
 
-// ฟังก์ชันบันทึกการใช้คูปอง
-function saveCouponUsage(empId, couponCode, points) {
-  try {
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('DB-ประวัติรับคูปอง');
-    const timestamp = new Date();
-    
-    // บันทึก: A=ประทับเวลา, B=รหัสพนักงาน, C=รหัสคูปอง, D=จำนวนแต้ม
-    sheet.appendRow([timestamp, empId, couponCode, points]);
-    return { success: true };
-  } catch (error) {
-    return { success: false, message: "เกิดข้อผิดพลาดในการบันทึก: " + error.message };
-  }
-}
-
-// ฟังก์ชันดึงรายชื่อลูกค้าจากชีท DDL คอลัมน์ A
-function getCustomerList() {
-  try {
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('DDL');
-    if (!sheet) return { success: false, message: "ไม่พบชีท 'DDL'" };
-    
-    const data = sheet.getRange("A2:A").getDisplayValues();
-    const list = [];
-    
-    for (let i = 0; i < data.length; i++) {
-      if (data[i][0] !== "") {
-        list.push(data[i][0]);
-      }
-    }
-    
-    return { success: true, data: list };
-  } catch (error) {
-    return { success: false, message: "เกิดข้อผิดพลาดในการดึงข้อมูลลูกค้า: " + error.message };
-  }
-}
-
-// ฟังก์ชันค้นหาข้อมูลของลูกค้า และ ของรางวัลจาก App-01 และ App-02
-function searchCustomerRewards(customerId) {
+// ฟังก์ชันตรวจสอบการเข้าสู่ระบบ (โหลดเฉพาะข้อมูลพื้นฐาน + ของรางวัลหน้าหลัก)
+function loginUser(phone, password) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName('App-01');
+    if (!sheet) return { success: false, message: 'ไม่พบชีท "App-01"' };
     
-    // 1. ดึงข้อมูลจำนวนแต้ม และ ปริมาณสะสมจากชีท "App-01"
-    let points = "0";
-    let volume = "0";
-    let foundInApp01 = false;
-    const sheetApp01 = ss.getSheetByName('App-01');
-    if (sheetApp01) {
-      const data01 = sheetApp01.getDataRange().getDisplayValues();
-      for (let i = 1; i < data01.length; i++) {
-        if (data01[i][0] === customerId) { // เช็ครหัส 7 หลักในคอลัมน์ A
-          volume = data01[i][8];  // คอลัมน์ I (ปริมาณสะสม)
-          points = data01[i][10]; // คอลัมน์ K (จำนวนแต้ม)
-          foundInApp01 = true;
-          break; // เจอแล้วหยุดหา
-        }
+    const data = sheet.getDataRange().getValues();
+    let userData = null;
+    
+    // เช็คเบอร์โทรจากคอลัมน์ C (index 2) และรหัสผ่านคอลัมน์ D (index 3)
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][2]).trim() === String(phone).trim() && 
+          String(data[i][3]).trim() === String(password).trim()) {
+        userData = {
+          success: true,
+          customerId: data[i][0],        
+          customerName: data[i][1],      
+          points: data[i][10],           
+          accumulatedVolume: data[i][8], 
+          level: data[i][11]             
+        };
+        break;
       }
     }
 
-    // 2. ดึงข้อมูลของรางวัลจากชีท "App-02"
+    if (!userData) {
+      return { success: false, message: 'เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง' };
+    }
+
+    // --- 1. ดึงข้อมูลของรางวัลที่แลกได้ (สำหรับหน้าหลัก) ---
+    const promoSheet = ss.getSheetByName('จัดการโปรโมชัน');
     let rewards = [];
-    const sheetApp02 = ss.getSheetByName('App-02');
-    if (sheetApp02) {
-      const data02 = sheetApp02.getDataRange().getDisplayValues();
-      for (let i = 1; i < data02.length; i++) {
-        if (data02[i][0] === customerId) {
-          // ดึงเฉพาะสถานะ '0' = ใช้งานได้
-          if (data02[i][8] === '0') {
+    if (promoSheet) {
+      const lastRow = promoSheet.getLastRow();
+      if (lastRow >= 2) {
+        const promoData = promoSheet.getRange(2, 1, lastRow - 1, 8).getValues();
+        for (let j = 0; j < promoData.length; j++) {
+          
+          if (promoData[j][0] && promoData[j][6] === true) {
             rewards.push({
-              code: data02[i][1],       // คอลัมน์ B (รหัสคูปอง)
-              name: data02[i][2],       // คอลัมน์ C (ชื่อของรางวัล)
-              image: convertDriveUrl(data02[i][4]), // คอลัมน์ E (รูป)
-              expiry: data02[i][5],     // คอลัมน์ F (วันหมดอายุ)
-              redeemDate: data02[i][6], // คอลัมน์ G (วันที่แลก)
-              status: data02[i][8]      // คอลัมน์ I (สถานะ)
+              name: promoData[j][0],                             
+              image: getDriveImageUrl(promoData[j][1]),          
+              condition: promoData[j][2] || '-',                 
+              points: promoData[j][3],
+              rewardCode: promoData[j][7] || '' 
             });
           }
         }
       }
     }
-    
-    return { 
-      success: true, 
-      data: {
-        foundInApp01: foundInApp01,
-        points: points,
-        volume: volume,
-        rewards: rewards
+    userData.rewards = rewards; 
+
+    // --- 2. ดึงข้อมูล "รางวัลของฉัน" จาก App-02 (โหลดพร้อมกันทีเดียว) ---
+    const myRewardsSheet = ss.getSheetByName('App-02');
+    let myRewards = [];
+
+    if (myRewardsSheet) {
+      const lastRowApp02 = myRewardsSheet.getLastRow();
+      if (lastRowApp02 >= 2) {
+        // ดึงข้อมูล 2 แบบ: ค่าดิบ และ ค่าแสดงผล
+        const rangeApp02 = myRewardsSheet.getRange(2, 1, lastRowApp02 - 1, 9);
+        const app02Data = rangeApp02.getValues();
+        const app02DisplayData = rangeApp02.getDisplayValues();
+
+        for (let k = 0; k < app02Data.length; k++) {
+          if (String(app02Data[k][0]).trim() === String(userData.customerId).trim()) {
+            
+            let expDate = app02DisplayData[k][5] || 'ไม่มีวันหมดอายุ'; 
+            let rawExpireDate = 9999999999999; 
+            if (app02Data[k][5] instanceof Date) {
+              rawExpireDate = app02Data[k][5].getTime();
+            }
+
+            let redeemDate = app02DisplayData[k][6] || '-'; 
+            let usedDate = app02DisplayData[k][7] || '-';
+
+            let status = String(app02Data[k][8]).trim(); 
+
+            myRewards.push({
+              couponCode: app02Data[k][1],
+              name: app02Data[k][2],
+              points: Number(app02Data[k][3]) || 0,
+              image: getDriveImageUrl(app02Data[k][4]),
+              expireDate: expDate,
+              rawExpireDate: rawExpireDate,
+              redeemDate: redeemDate,
+              usedDate: usedDate,
+              status: status
+            });
+          }
+        }
       }
-    };
+    }
+    userData.myRewards = myRewards;
+
+    return userData;
+    
   } catch (error) {
-    return { success: false, message: "เกิดข้อผิดพลาดในการดึงข้อมูลของรางวัล: " + error.message };
+    return { success: false, message: 'เกิดข้อผิดพลาด: ' + error.toString() };
   }
 }
 
-// Helper: แปลงลิงก์ Google Drive ให้อยู่ในรูปแบบที่แสดงรูปภาพได้โดยตรง
-function convertDriveUrl(url) {
-  if (!url) return '';
-  const match = url.match(/[-\w]{25,}/);
-  if (match) {
-    return 'https://drive.google.com/thumbnail?id=' + match[0] + '&sz=w800';
+// ฟังก์ชันดึงประวัติรางวัลของฉัน
+function getMyRewards(customerId) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const myRewardsSheet = ss.getSheetByName('App-02');
+    let myRewards = [];
+
+    if (!myRewardsSheet) return { success: true, myRewards: [] };
+
+    const lastRowApp02 = myRewardsSheet.getLastRow();
+    if (lastRowApp02 >= 2) {
+      const rangeApp02 = myRewardsSheet.getRange(2, 1, lastRowApp02 - 1, 9);
+      const app02Data = rangeApp02.getValues();
+      const app02DisplayData = rangeApp02.getDisplayValues();
+
+      for (let k = 0; k < app02Data.length; k++) {
+        if (String(app02Data[k][0]).trim() === String(customerId).trim()) {
+          
+          let expDate = app02DisplayData[k][5] || 'ไม่มีวันหมดอายุ'; 
+          let rawExpireDate = 9999999999999; 
+          if (app02Data[k][5] instanceof Date) {
+            rawExpireDate = app02Data[k][5].getTime();
+          }
+
+          let redeemDate = app02DisplayData[k][6] || '-'; 
+          let usedDate = app02DisplayData[k][7] || '-';
+
+          let status = String(app02Data[k][8]).trim(); 
+
+          myRewards.push({
+            couponCode: app02Data[k][1],
+            name: app02Data[k][2],
+            points: Number(app02Data[k][3]) || 0,
+            image: getDriveImageUrl(app02Data[k][4]),
+            expireDate: expDate,
+            rawExpireDate: rawExpireDate,
+            redeemDate: redeemDate,
+            usedDate: usedDate,
+            status: status
+          });
+        }
+      }
+    }
+    return { success: true, myRewards: myRewards };
+  } catch (error) {
+    return { success: false, message: error.toString(), myRewards: [] };
   }
-  return url;
+}
+
+// ฟังก์ชันสำหรับบันทึกการแลกรางวัล
+function redeemReward(customerId, rewardName, points, rewardImage, rewardCode) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    
+    const now = new Date();
+    const localTimeMs = now.getTime() - (now.getTimezoneOffset() * 60000);
+    // แปลงเวลาให้เป็นตัวเลข 7 หลักแบบ Excel
+    const serial = 25569 + (localTimeMs / 86400000);
+    const timePart = Math.round(serial * 100).toString().substr(-7); 
+    
+    // โครงสร้างรหัสคูปอง 16 หลัก (รหัสรางวัล 2 หลัก + ลูกค้า 7 หลัก + เวลา 7 หลัก)
+    const safeRewardCode = String(rewardCode || '00').padStart(2, '0');
+    const safeCustomerId = String(customerId).padEnd(7, 'X').substring(0, 7); 
+    const rawCouponCode = safeRewardCode + safeCustomerId + timePart;
+    
+    // ใส่ ' เพื่อบังคับให้ Sheet มองเป็น Text (ข้อความ)
+    const customerIdText = "'" + String(customerId);
+    const couponCodeText = "'" + rawCouponCode;
+
+    let logSheet = ss.getSheetByName('DB-ประวัติแลกแต้ม');
+    if (!logSheet) { 
+      logSheet = ss.insertSheet('DB-ประวัติแลกแต้ม');
+      logSheet.appendRow(['ประทับเวลา', 'รหัสลูกค้า', 'รหัสคูปอง', 'ชื่อของรางวัล', 'จำนวนแต้มที่แลก', 'รูปของรางวัล']);
+    }
+    
+    // บันทึกข้อมูล
+    logSheet.appendRow([now, customerIdText, couponCodeText, rewardName, points, rewardImage]);
+    SpreadsheetApp.flush();
+    
+    const appSheet = ss.getSheetByName('App-01');
+    let remainingPoints = 0;
+    if (appSheet) {
+      const data = appSheet.getDataRange().getValues();
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() === String(customerId).trim()) {
+          remainingPoints = data[i][10]; 
+          break;
+        }
+      }
+    }
+
+    const redeemDateStr = Utilities.formatDate(now, "Asia/Bangkok", "dd/MM/yyyy HH:mm");
+
+    return { 
+      success: true, 
+      couponCode: rawCouponCode, // ส่งกลับแบบไม่มี '
+      remainingPoints: remainingPoints, 
+      redeemDateStr: redeemDateStr,
+      message: 'แลกรางวัลสำเร็จ!' 
+    };
+  } catch (error) {
+    return { success: false, message: 'เกิดข้อผิดพลาด: ' + error.toString() };
+  }
+}
+
+// ฟังก์ชันสำหรับบันทึกการเปลี่ยนรหัสผ่าน
+function changeUserPassword(customerId, newPassword) {
+  try {
+    const TARGET_SS_ID = '14A5wbLz4slr7OkWgNq2ES7MurZVLvAj6pCm1_BEKu4U';
+    const ss = SpreadsheetApp.openById(TARGET_SS_ID);
+    
+    let sheet = ss.getSheetByName('DB_รหัสผ่าน');
+    if (!sheet) {
+      sheet = ss.insertSheet('DB_รหัสผ่าน');
+      sheet.appendRow(['ประทับเวลา', 'รหัสลูกค้า', 'รหัสผ่านใหม่']);
+    }
+    
+    // ใส่ ' เพื่อบังคับให้เป็น Text
+    const customerIdText = "'" + String(customerId);
+    const newPasswordText = "'" + String(newPassword);
+
+    sheet.appendRow([new Date(), customerIdText, newPasswordText]);
+    
+    return { success: true, message: 'บันทึกรหัสผ่านใหม่สำเร็จ' };
+    
+  } catch (error) {
+    return { success: false, message: 'เกิดข้อผิดพลาดในการบันทึก: ' + error.toString() };
+  }
 }
