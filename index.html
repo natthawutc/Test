@@ -258,7 +258,7 @@
         </div>
 
         <div class="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-gray-100 z-10 max-w-md mx-auto left-1/2 transform -translate-x-1/2">
-             <button onclick="openConfirmModal()" class="w-full bg-blue-800 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition-colors">
+             <button id="btn-open-confirm" onclick="openConfirmModal()" class="w-full bg-blue-800 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition-colors">
                 แลกของรางวัล
              </button>
         </div>
@@ -415,7 +415,7 @@
         // ========================================================
         // ⚙️ ตั้งค่าส่วนที่ 2: ลิงก์เชื่อมต่อฐานข้อมูล GAS (API)
         // ========================================================
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby4R7zNaHDT1bBSU0mqeuigF9fcxPNZWKwluOjM-Y6Pf8VEgZp6-dhKJNWt7BQmaro0/exec";
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxudc6mwJ6dfwC7e3oCOrPCHEFclFA1uYzHewTtgMt4MHfHIsUD1kJCDHSmmRQUJeW8-w/exec";
         // ========================================================
 
         let currentUser = null;
@@ -605,14 +605,27 @@
                 if (response.rewards && response.rewards.length > 0) {
                     availableRewardsList = response.rewards; 
                     response.rewards.forEach((reward, index) => {
+                        
+                        // เช็คของหมด
+                        const isOutOfStock = reward.remaining < 1;
+                        const stockOverlay = isOutOfStock ? `
+                            <div class="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                                <div class="bg-red-600 text-white font-bold text-xl px-5 py-2 transform -rotate-12 rounded-lg shadow-lg border-2 border-white">หมด</div>
+                            </div>
+                        ` : '';
+                        
+                        // ปรับสีการ์ดถ้าของหมด
+                        const cardClass = isOutOfStock ? 'opacity-80 grayscale-[50%]' : 'hover:shadow-md cursor-pointer transition-shadow';
+
                         const card = `
-                        <div onclick="openRewardDetail(${index})" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer">
+                        <div onclick="openRewardDetail(${index})" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col relative ${cardClass}">
+                            ${stockOverlay}
                             <div class="aspect-square bg-gray-50 relative border-b border-gray-100">
                                 <img src="${reward.image}" alt="${reward.name}" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/400x400/e2e8f0/475569?text=ไม่มีรูป'">
                             </div>
                             <div class="p-3 flex-1 flex flex-col justify-between">
                                 <h4 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 leading-snug">${reward.name}</h4>
-                                <div class="flex items-center mt-auto">
+                                <div class="flex items-center mt-auto relative z-20">
                                     <div class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1.5 rounded-lg w-full text-center border border-blue-100">
                                         ใช้ ${Number(reward.points).toLocaleString()} แต้ม
                                     </div>
@@ -775,6 +788,18 @@
             document.getElementById('detail-name').innerText = reward.name;
             document.getElementById('detail-points').innerText = Number(reward.points).toLocaleString();
             document.getElementById('detail-condition').innerText = reward.condition || 'ไม่มีเงื่อนไขเพิ่มเติม';
+            
+            // จัดการปุ่มแลกรางวัล กรณีของหมด
+            const btnConfirm = document.getElementById('btn-open-confirm');
+            if (reward.remaining < 1) {
+                btnConfirm.disabled = true;
+                btnConfirm.innerText = "ของรางวัลหมด";
+                btnConfirm.className = "w-full bg-gray-400 text-white font-bold py-3.5 rounded-xl shadow cursor-not-allowed";
+            } else {
+                btnConfirm.disabled = false;
+                btnConfirm.innerText = "แลกของรางวัล";
+                btnConfirm.className = "w-full bg-blue-800 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition-colors";
+            }
             
             const modal = document.getElementById('reward-detail-modal');
             modal.classList.remove('hidden');
