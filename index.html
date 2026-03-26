@@ -617,6 +617,13 @@
                         // ปรับสีการ์ดถ้าของหมด
                         const cardClass = isOutOfStock ? 'opacity-80 grayscale-[50%]' : 'hover:shadow-md cursor-pointer transition-shadow';
 
+                        // คำนวณเปอร์เซ็นต์หลอด
+                        let percent = 0;
+                        if (reward.totalQuantity > 0) {
+                            percent = (reward.remaining / reward.totalQuantity) * 100;
+                            if (percent > 100) percent = 100;
+                        }
+
                         const card = `
                         <div onclick="openRewardDetail(${index})" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col relative ${cardClass}">
                             ${stockOverlay}
@@ -625,6 +632,17 @@
                             </div>
                             <div class="p-3 flex-1 flex flex-col justify-between">
                                 <h4 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 leading-snug">${reward.name}</h4>
+                                
+                                <!-- หลอดแสดงจำนวนคงเหลือ -->
+                                <div class="w-full mb-3">
+                                    <div class="w-full bg-gray-200 rounded-full h-4 relative overflow-hidden shadow-inner">
+                                        <div class="bg-blue-500 h-4 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                                        <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white" style="text-shadow: 0px 0px 3px rgba(0,0,0,0.8);">
+                                            ${reward.remaining} / ${reward.totalQuantity}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="flex items-center mt-auto relative z-20">
                                     <div class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1.5 rounded-lg w-full text-center border border-blue-100">
                                         ใช้ ${Number(reward.points).toLocaleString()} แต้ม
