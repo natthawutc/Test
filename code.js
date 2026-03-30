@@ -108,16 +108,30 @@ function loginUser(phone, password) {
     if (promoSheet) {
       const lastRow = promoSheet.getLastRow();
       if (lastRow >= 2) {
-        const promoData = promoSheet.getRange(2, 1, lastRow - 1, 8).getValues();
+        // ดึงข้อมูล 11 คอลัมน์ (A ถึง K)
+        const promoData = promoSheet.getRange(2, 1, lastRow - 1, 11).getValues();
         for (let j = 0; j < promoData.length; j++) {
           
-          if (promoData[j][0] && promoData[j][6] === true) {
+          // คอลัมน์ B (Index 1) คือ ชื่อรางวัล ต้องมีข้อมูล
+          // คอลัมน์ I (Index 8) คือ สถานะเปิดใช้งาน ต้องเป็น true
+          if (promoData[j][1] && promoData[j][8] === true) {
+            
+            // คอลัมน์ J (Index 9) คือ จำนวนคงเหลือ
+            let remaining = parseInt(promoData[j][9]);
+            if (isNaN(remaining)) remaining = 0; 
+            
+            // คอลัมน์ G (Index 6) คือ จำนวนทั้งหมด
+            let totalQty = parseInt(promoData[j][6]);
+            if (isNaN(totalQty)) totalQty = 0;
+
             rewards.push({
-              name: promoData[j][0],                             
-              image: getDriveImageUrl(promoData[j][1]),          
-              condition: promoData[j][2] || '-',                 
-              points: promoData[j][3],
-              rewardCode: promoData[j][7] || '' 
+              name: promoData[j][1],                             // คอลัมน์ B: ชื่อของรางวัล
+              image: getDriveImageUrl(promoData[j][2]),          // คอลัมน์ C: รูปของรางวัล
+              condition: promoData[j][3] || '-',                 // คอลัมน์ D: เงื่อนไข
+              points: promoData[j][4],                           // คอลัมน์ E: แต้มที่ใช้แลก
+              rewardCode: promoData[j][0] || '',                 // คอลัมน์ A: รหัสรางวัล 
+              remaining: remaining,                              // คอลัมน์ J: จำนวนคงเหลือ
+              totalQuantity: totalQty                            // คอลัมน์ G: จำนวนทั้งหมด
             });
           }
         }
@@ -229,16 +243,37 @@ function redeemReward(customerId, rewardName, points, rewardImage, rewardCode) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     
+    // --- เพิ่มการตรวจสอบ 2 ชั้น (Double Check Stock) ---
+    // ป้องกันกรณีหน้าจอลูกค้า delay แล้วกดแลกตอนที่ของหมดไปแล้ว
+    const promoSheet = ss.getSheetByName('จัดการโปรโมชัน');
+    if (promoSheet) {
+      const promoData = promoSheet.getDataRange().getValues();
+      for (let i = 1; i < promoData.length; i++) {
+        // ค้นหารหัสรางวัลในคอลัมน์ A (Index 0)
+        if (String(promoData[i][0]).trim() === String(rewardCode).trim()) {
+          let remaining = parseInt(promoData[i][9]); // จำนวนคงเหลือ คอลัมน์ J (Index 9)
+          if (isNaN(remaining) || remaining <= 0) {
+            return { success: false, message: 'ของรางวัลหมด' }; // ส่งข้อความกลับไปแจ้ง Frontend
+          }
+          break; // เจอข้อมูลแล้วและของยังมีอยู่ ออกจากลูปเพื่อไปทำงานต่อ
+        }
+      }
+    }
+    // ---------------------------------------------------
+
     const now = new Date();
-    const localTimeMs = now.getTime() - (now.getTimezoneOffset() * 60000);
-    // แปลงเวลาให้เป็นตัวเลข 7 หลักแบบ Excel
-    const serial = 25569 + (localTimeMs / 86400000);
-    const timePart = Math.round(serial * 100).toString().substr(-7); 
     
-    // โครงสร้างรหัสคูปอง 16 หลัก (รหัสรางวัล 2 หลัก + ลูกค้า 7 หลัก + เวลา 7 หลัก)
+    // สุ่มตัวอักษรภาษาอังกฤษและตัวเลข 7 หลัก
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomPart = '';
+    for (let i = 0; i < 7; i++) {
+      randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    // โครงสร้างรหัสคูปอง 16 หลัก (รหัสรางวัล 2 หลัก + ลูกค้า 7 หลัก + สุ่ม 7 หลัก)
     const safeRewardCode = String(rewardCode || '00').padStart(2, '0');
     const safeCustomerId = String(customerId).padEnd(7, 'X').substring(0, 7); 
-    const rawCouponCode = safeRewardCode + safeCustomerId + timePart;
+    const rawCouponCode = safeRewardCode + safeCustomerId + randomPart;
     
     // ใส่ ' เพื่อบังคับให้ Sheet มองเป็น Text (ข้อความ)
     const customerIdText = "'" + String(customerId);
