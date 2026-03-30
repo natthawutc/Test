@@ -276,8 +276,11 @@
             <p id="confirm-text" class="text-sm text-gray-500 mb-6 leading-relaxed"></p>
             
             <div class="flex gap-3">
-                <button onclick="closeConfirmModal()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">ยกเลิก</button>
-                <button id="btn-confirm-redeem" onclick="processRedeem()" class="flex-1 bg-blue-800 text-white font-bold py-3 rounded-xl hover:bg-blue-900 transition-colors flex justify-center items-center">
+                <!-- เพิ่ม ID btn-cancel-redeem และ CSS สำหรับสถานะ Disabled ให้ปุ่มยกเลิก -->
+                <button id="btn-cancel-redeem" onclick="closeConfirmModal()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">ยกเลิก</button>
+                
+                <!-- เพิ่ม CSS สำหรับสถานะ Disabled ให้ปุ่มยืนยัน -->
+                <button id="btn-confirm-redeem" onclick="processRedeem()" class="flex-1 bg-blue-800 text-white font-bold py-3 rounded-xl hover:bg-blue-900 transition-colors flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed">
                     <span id="txt-confirm-redeem">ยืนยัน</span>
                 </button>
             </div>
@@ -901,15 +904,19 @@
 
         function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
 
-        // ปรับปรุงกระบวนการแลกรางวัล (Real-time Optimistic Update)
+        // ปรับปรุงกระบวนการแลกรางวัล (Real-time Optimistic Update และล็อคปุ่มยกเลิก)
         function processRedeem() {
             if (selectedRewardIndex === null || !currentUser) return;
             
             const reward = availableRewardsList[selectedRewardIndex];
             const customerId = currentUser.customerId; 
             
-            const btn = document.getElementById('btn-confirm-redeem');
-            btn.disabled = true;
+            const btnConfirm = document.getElementById('btn-confirm-redeem');
+            const btnCancel = document.getElementById('btn-cancel-redeem'); // ดึงปุ่มยกเลิกมาใช้งาน
+            
+            // ล็อคปุ่มทั้งสองเมื่อเริ่มประมวลผล
+            btnConfirm.disabled = true;
+            btnCancel.disabled = true;
             document.getElementById('txt-confirm-redeem').innerText = 'กำลังดำเนินการ...';
 
             callGasApi('redeemReward', {
@@ -920,7 +927,9 @@
                 rewardCode: reward.rewardCode
             })
             .then(response => {
-                btn.disabled = false;
+                // ปลดล็อคปุ่มทั้งสองเมื่อประมวลผลเสร็จ
+                btnConfirm.disabled = false;
+                btnCancel.disabled = false;
                 document.getElementById('txt-confirm-redeem').innerText = 'ยืนยัน';
                 closeConfirmModal();
                 
@@ -954,11 +963,14 @@
                     // โหลดข้อมูลแบบเงียบเบื้องหลัง เพื่อซิงค์กับระบบอีกครั้ง
                     processLogin(true); 
                 } else {
+                    // หากโดนบล็อกการแลก 2 ชั้นจากหลังบ้าน ระบบจะโชว์แจ้งเตือนว่า "ของรางวัลหมด" ตรงนี้ครับ
                     showMsg('ไม่สามารถแลกได้', response.message);
                 }
             })
             .catch(error => {
-                btn.disabled = false;
+                // ปลดล็อคปุ่มทั้งสองหากเกิด Error ระหว่างทาง
+                btnConfirm.disabled = false;
+                btnCancel.disabled = false;
                 document.getElementById('txt-confirm-redeem').innerText = 'ยืนยัน';
                 closeConfirmModal();
                 showMsg('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
