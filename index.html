@@ -297,7 +297,6 @@
                 <div class="space-y-6 bg-gray-50 p-5 rounded-2xl border border-gray-200">
                     <div>
                         <label class="block text-lg font-bold text-gray-800 mb-2">ชนิดเส้นไหม</label>
-                        <!-- เพิ่ม appearance-none และ style เพื่อคุมความกว้างให้ตรงกันทุกเบราว์เซอร์ -->
                         <input type="text" id="fb-silkType" list="list-silk-types" 
                                class="w-full appearance-none outline-none block bg-white text-gray-800 border-2 border-gray-300 rounded-xl px-4 py-4 text-lg font-medium focus:border-blue-500 focus:ring-0 transition-all"
                                style="max-width: 100%; box-sizing: border-box;"
@@ -321,7 +320,6 @@
 
                     <div>
                         <label class="block text-lg font-bold text-gray-800 mb-2">วันที่ซื้อ</label>
-                        <!-- แก้ไขคลาสของ input date เพื่อป้องกันการล้นขอบจอในมือถือ -->
                         <input type="date" id="fb-buyDate" 
                                class="w-full appearance-none outline-none block bg-white text-gray-800 border-2 border-gray-300 rounded-xl px-4 py-4 text-lg font-medium focus:border-blue-500 focus:ring-0 transition-all"
                                style="max-width: 100%; box-sizing: border-box;">
@@ -398,8 +396,6 @@
             </div>
         </div>
     </div>
-    <!-- ========================================================= -->
-
 
     <!-- 3. Modal QR Code หลัก (รับแต้ม) -->
     <div id="qr-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-70 transition-opacity">
@@ -632,12 +628,17 @@
         }
 
         function initFeedbackForm() {
+            // ป้องกันการค้างโดยเปิดโหลดใหม่ และซ่อนคอนเทนต์ไว้ก่อนเสมอเมื่อเริ่มเรียก
+            document.getElementById('feedback-loading').classList.remove('hidden');
+            document.getElementById('feedback-content').classList.add('hidden');
+            
             callGasApi('getFeedbackFormData', {})
             .then(res => {
                 document.getElementById('feedback-loading').classList.add('hidden');
-                document.getElementById('feedback-content').classList.remove('hidden');
                 
                 if (res.success) {
+                    document.getElementById('feedback-content').classList.remove('hidden');
+                    
                     const silkList = document.getElementById('list-silk-types');
                     silkList.innerHTML = '';
                     res.silkTypes.forEach(s => {
@@ -677,10 +678,14 @@
                     isFeedbackFormLoaded = true;
                 } else {
                     showMsg('โหลดฟอร์มไม่สำเร็จ', res.message);
+                    switchTab('menu'); // ถ้าดึงไม่สำเร็จให้กลับไปหน้าเมนู
                 }
             })
             .catch(err => {
-                showMsg('ข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลฟอร์มได้ กรุณาลองใหม่');
+                // อัปเดต: ถ้า Error จากการ Fetch (เช่นไม่ได้ Authorize Sheet) ให้ปิดหลอดโหลดด้วย
+                document.getElementById('feedback-loading').classList.add('hidden');
+                showMsg('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลฟอร์มได้ กรุณาตรวจสอบว่าคุณได้กด "อนุญาตสิทธิ์ (Authorize)" ใน Google Apps Script สำหรับชีทใหม่แล้ว\n\nรายละเอียด: ' + err.message);
+                switchTab('menu'); // กลับไปหน้าเมนู
             });
         }
 
@@ -1280,21 +1285,6 @@
                 btnConfirm.disabled = false; btnCancel.disabled = false; document.getElementById('txt-confirm-redeem').innerText = 'ยืนยัน';
                 closeConfirmModal(); showMsg('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
             });
-        }
-
-        function switchTab(tab) {
-            ['home', 'rewards', 'menu'].forEach(t => {
-                const section = document.getElementById(t + (t === 'home' ? '-section' : '-page'));
-                section.classList.add('hidden'); section.classList.remove('opacity-100'); section.classList.add('opacity-0');
-            });
-
-            document.querySelectorAll('.nav-btn').forEach(btn => { btn.classList.remove('text-blue-800'); btn.classList.add('text-gray-400'); });
-
-            const activeSection = document.getElementById(tab + (tab === 'home' ? '-section' : '-page'));
-            activeSection.classList.remove('hidden');
-            setTimeout(() => { activeSection.classList.remove('opacity-0'); activeSection.classList.add('opacity-100'); }, 50);
-
-            document.getElementById('nav-' + tab).classList.remove('text-gray-400'); document.getElementById('nav-' + tab).classList.add('text-blue-800');
         }
 
         function logout() {
