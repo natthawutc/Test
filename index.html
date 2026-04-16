@@ -52,8 +52,8 @@
     <div id="msg-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black bg-opacity-50 transition-opacity">
         <div class="bg-white rounded-2xl p-6 w-11/12 max-w-sm text-center shadow-xl transform scale-100">
             <h3 id="msg-title" class="text-xl font-bold mb-3 text-gray-900">แจ้งเตือน</h3>
-            <p id="msg-text" class="text-gray-700 mb-6 text-lg whitespace-pre-wrap leading-relaxed"></p>
-            <button onclick="closeMsg()" class="w-full bg-blue-800 text-white font-bold py-3 text-lg rounded-xl hover:bg-blue-900 transition">ตกลง</button>
+            <div id="msg-text" class="text-gray-700 mb-6 text-lg whitespace-pre-wrap leading-relaxed"></div>
+            <button id="msg-btn" onclick="closeMsg()" class="w-full bg-blue-800 text-white font-bold py-3 text-lg rounded-xl hover:bg-blue-900 transition">ตกลง</button>
         </div>
     </div>
 
@@ -287,6 +287,9 @@
                         </button>
                     </div>
                     
+                    <!-- โชว์รหัสที่สแกนมา -->
+                    <div id="fb-scanned-qr-display" class="hidden text-center text-sm font-mono bg-green-50 text-green-700 p-2 rounded-lg border border-green-200"></div>
+
                     <div class="flex items-center gap-3">
                         <div class="h-px bg-gray-300 flex-1"></div>
                         <span class="text-gray-500 font-medium text-sm">หรือ กรอกข้อมูลด้านล่างหากไม่มีป้าย</span>
@@ -584,6 +587,7 @@
             "เส้นไหม ด่าง", "เส้นไหม กรอยาก", "หัวม้วน เอียง", "อื่นๆ"
         ];
         let uploadedImages = [];
+        let scannedQRCodeData = ""; // ตัวแปรเก็บข้อมูล QR Code ที่สแกนมาได้
 
         // ตัวแปรระบบเดิม
         let currentUser = null;
@@ -608,7 +612,13 @@
         // แจ้งเตือนพื้นฐาน
         function showMsg(title, text) {
             document.getElementById('msg-title').innerText = title;
-            document.getElementById('msg-text').innerText = text;
+            // กรณีส่ง HTML มาให้เรนเดอร์ในกล่องแจ้งเตือนได้เลย
+            if(text.includes('<') && text.includes('>')) {
+                document.getElementById('msg-text').innerHTML = text;
+            } else {
+                document.getElementById('msg-text').innerText = text;
+            }
+            document.getElementById('msg-btn').classList.remove('hidden'); // แสดงปุ่มปกติ
             document.getElementById('msg-modal').classList.remove('hidden');
         }
         function closeMsg() { document.getElementById('msg-modal').classList.add('hidden'); }
@@ -678,14 +688,13 @@
                     isFeedbackFormLoaded = true;
                 } else {
                     showMsg('โหลดฟอร์มไม่สำเร็จ', res.message);
-                    switchTab('menu'); // ถ้าดึงไม่สำเร็จให้กลับไปหน้าเมนู
+                    switchTab('menu'); 
                 }
             })
             .catch(err => {
-                // อัปเดต: ถ้า Error จากการ Fetch (เช่นไม่ได้ Authorize Sheet) ให้ปิดหลอดโหลดด้วย
                 document.getElementById('feedback-loading').classList.add('hidden');
-                showMsg('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลฟอร์มได้ กรุณาตรวจสอบว่าคุณได้กด "อนุญาตสิทธิ์ (Authorize)" ใน Google Apps Script สำหรับชีทใหม่แล้ว\n\nรายละเอียด: ' + err.message);
-                switchTab('menu'); // กลับไปหน้าเมนู
+                showMsg('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลฟอร์มได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต\n\nรายละเอียด: ' + err.message);
+                switchTab('menu'); 
             });
         }
 
@@ -706,6 +715,9 @@
                     
                     try { html5QrCode.stop().catch(e => console.log(e)); } catch(e) {}
                     
+                    // บันทึกค่ารหัสที่อ่านได้ลงตัวแปร
+                    scannedQRCodeData = decodedText;
+                    
                     callGasApi('decodeProductQR', { qrText: decodedText })
                     .then(res => {
                         closeQRScanner(); 
@@ -715,6 +727,12 @@
                             gradeRadios.forEach(r => {
                                 if(r.value === res.grade) r.checked = true;
                             });
+                            
+                            // โชว์รหัส QR ที่หน้าจอ
+                            const qrDisplay = document.getElementById('fb-scanned-qr-display');
+                            qrDisplay.innerText = "รหัสป้าย: " + decodedText;
+                            qrDisplay.classList.remove('hidden');
+                            
                             showMsg('สำเร็จ', `อ่านป้ายสินค้าสำเร็จ\nชนิด: ${res.silkType}\nเกรด: ${res.grade}`);
                         } else {
                             showMsg('ข้อมูลไม่ถูกต้อง', res.message);
@@ -785,8 +803,121 @@
             renderImagePreviews();
         }
 
-        function submitFeedback() {
-            showMsg('เร็วๆ นี้', 'ระบบบันทึกข้อมูลกำลังอยู่ระหว่างการพัฒนา');
+        // ฟังก์ชันใหม่: ส่งข้อมูลฟอร์มและรูปภาพไปยัง GAS
+        async function submitFeedback() {
+            if (!currentUser) return;
+            
+            // 1. ดึงข้อมูลจากฟอร์ม
+            const silkType = document.getElementById('fb-silkType').value.trim();
+            const gradeRadio = document.querySelector('input[name="fb-grade"]:checked');
+            const grade = gradeRadio ? gradeRadio.value : "";
+            const weight = document.getElementById('fb-weight').value.trim();
+            const buyDate = document.getElementById('fb-buyDate').value; 
+            
+            // รวบรวมปัญหาที่พบ
+            const problemChecks = document.querySelectorAll('.problem-checkbox:checked');
+            let problems = [];
+            let hasOther = false;
+            problemChecks.forEach(chk => {
+                if (chk.value === "อื่นๆ") {
+                    hasOther = true;
+                } else {
+                    problems.push(chk.value);
+                }
+            });
+            if (hasOther) {
+                const otherText = document.getElementById('fb-other-text').value.trim();
+                if (otherText) problems.push("อื่นๆ: " + otherText);
+                else problems.push("อื่นๆ");
+            }
+            const problemsStr = problems.join('*');
+            
+            // Validate อย่างน้อยต้องมีข้อมูล 1 อย่าง
+            if (!silkType && !grade && !weight && !problemsStr) {
+                showMsg('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลอย่างน้อยหนึ่งช่องเพื่อส่งคำแนะนำ');
+                return;
+            }
+
+            // 2. แสดง UI กำลังโหลด (ซ่อนปุ่มตกลง)
+            document.getElementById('msg-title').innerText = 'กำลังบันทึกข้อมูล...';
+            document.getElementById('msg-text').innerHTML = `
+                <div class="flex flex-col items-center justify-center py-4">
+                    <svg class="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-sm font-bold text-blue-800">กำลังอัปโหลดข้อมูลและรูปภาพ</p>
+                    <p class="text-xs text-gray-500 mt-1">กรุณารอสักครู่ (อาจใช้เวลา 10-30 วินาที)</p>
+                </div>`;
+            document.getElementById('msg-btn').classList.add('hidden'); // ซ่อนปุ่ม
+            document.getElementById('msg-modal').classList.remove('hidden');
+
+            try {
+                // 3. แปลงไฟล์รูปภาพเป็น Base64
+                const base64Images = await Promise.all(uploadedImages.map(file => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve({
+                            mimeType: file.type,
+                            data: reader.result.split(',')[1],
+                            filename: file.name
+                        });
+                        reader.onerror = error => reject(error);
+                        reader.readAsDataURL(file);
+                    });
+                }));
+
+                // 4. ส่งไป API
+                const payload = {
+                    customerId: currentUser.customerId,
+                    qrCode: scannedQRCodeData,
+                    silkType: silkType,
+                    grade: grade,
+                    weight: weight,
+                    buyDate: buyDate,
+                    problems: problemsStr,
+                    images: base64Images
+                };
+
+                const res = await callGasApi('submitProductFeedback', payload);
+                
+                if (res.success) {
+                    showMsg('สำเร็จ', 'บันทึกข้อมูลคำแนะนำของคุณเรียบร้อยแล้ว ขอบคุณที่ร่วมพัฒนาคุณภาพสินค้าของเราครับ');
+                    resetFeedbackForm();
+                    // เปลี่ยนกลับหน้าเมนูเมื่อกดตกลง (จัดการด้วย delay เล็กน้อยให้ user อ่านทัน)
+                    setTimeout(() => {
+                        const btn = document.getElementById('msg-btn');
+                        const oldOnclick = btn.onclick;
+                        btn.onclick = function() {
+                            closeMsg();
+                            switchTab('menu');
+                            btn.onclick = oldOnclick; // คืนค่า onclick เดิม
+                        };
+                    }, 100);
+                } else {
+                    showMsg('เกิดข้อผิดพลาด', res.message);
+                }
+            } catch (err) {
+                showMsg('เกิดข้อผิดพลาด', 'การเชื่อมต่อขัดข้อง: ' + err.message);
+            }
+        }
+
+        function resetFeedbackForm() {
+            scannedQRCodeData = "";
+            document.getElementById('fb-scanned-qr-display').classList.add('hidden');
+            document.getElementById('fb-scanned-qr-display').innerText = '';
+            
+            document.getElementById('fb-silkType').value = '';
+            document.querySelectorAll('input[name="fb-grade"]').forEach(r => r.checked = false);
+            document.getElementById('fb-weight').value = '';
+            document.getElementById('fb-buyDate').value = '';
+            
+            document.querySelectorAll('.problem-checkbox').forEach(c => c.checked = false);
+            document.getElementById('fb-other-container').classList.add('hidden');
+            document.getElementById('fb-other-text').value = '';
+            
+            uploadedImages = [];
+            renderImagePreviews();
         }
 
         // ========================================================
