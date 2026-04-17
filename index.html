@@ -718,12 +718,22 @@
                     const empCont = document.getElementById('fb-employee-container');
                     empCont.innerHTML = '';
                     res.employees.forEach(emp => {
-                        const defaultAvatar = "https://placehold.co/200x200/e2e8f0/64748b?text=%F0%9F%91%A4";
+                        let imageHtml = '';
+                        const fallbackAvatarHtml = `<div class="w-20 h-20 rounded-full mx-auto mb-3 bg-gray-100 flex items-center justify-center text-4xl border-2 border-gray-200 shadow-sm">👤</div>`;
+                        const safeFallbackHtml = fallbackAvatarHtml.replace(/"/g, '&quot;');
+                        
+                        // ดักจับกรณีไม่มีรูป ลิงก์เสีย หรือเป็นรูปเริ่มต้น (กล่องของขวัญ) จากระบบ
+                        if (!emp.image || emp.image.includes('gift.png')) {
+                            imageHtml = fallbackAvatarHtml;
+                        } else {
+                            imageHtml = `<img src="${emp.image}" class="w-20 h-20 rounded-full mx-auto object-cover mb-3 border-2 border-gray-100 bg-gray-100 shadow-sm" onerror="this.onerror=null; this.outerHTML='${safeFallbackHtml}'">`;
+                        }
+
                         const html = `
                         <label class="cursor-pointer w-full">
                             <input type="radio" name="fb-employee" value="${emp.id}" class="peer sr-only">
                             <div class="rounded-xl border-2 border-gray-300 p-4 text-center transition-all bg-white shadow-sm peer-checked:border-blue-800 peer-checked:bg-blue-50 h-full flex flex-col items-center justify-start">
-                                <img src="${emp.image}" class="w-20 h-20 rounded-full mx-auto object-cover mb-3 border-2 border-gray-100 bg-gray-100" onerror="this.onerror=null; this.src='${defaultAvatar}'">
+                                ${imageHtml}
                                 <p class="text-[16px] font-bold text-gray-800 line-clamp-2 leading-tight w-full">${emp.name}</p>
                             </div>
                         </label>
