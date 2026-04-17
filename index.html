@@ -34,7 +34,8 @@
         .progress-smooth { 
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
         }
-        .problem-checkbox:checked + div {
+        .problem-checkbox:checked + div,
+        .svc-problem-checkbox:checked + div {
             background-color: #1e3a8a; 
             border-color: #1e3a8a;
             color: white;
@@ -165,19 +166,14 @@
             </div>
         </div>
 
-        <button onclick="showQRModal()" 
-                class="hidden w-full bg-white text-blue-800 border-2 border-blue-800 hover:bg-blue-50 font-bold py-4 rounded-2xl shadow-sm transition-all flex justify-center items-center gap-2 mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-            </svg>
+        <button onclick="showQRModal()" class="hidden w-full bg-white text-blue-800 border-2 border-blue-800 hover:bg-blue-50 font-bold py-4 rounded-2xl shadow-sm transition-all flex justify-center items-center gap-2 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
             รับแต้ม
         </button>
 
         <div class="w-full mt-2 mb-6">
             <h3 class="font-bold text-gray-800 mb-4 px-2 text-lg">ของรางวัลที่แลกได้</h3>
-            <div id="rewards-container" class="grid grid-cols-2 gap-4">
-                <!-- ข้อมูลการ์ดของรางวัลจะแสดงที่นี่ -->
-            </div>
+            <div id="rewards-container" class="grid grid-cols-2 gap-4"></div>
         </div>
     </div>
 
@@ -235,7 +231,7 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- 2.3 หน้า แนะนำคุณภาพสินค้าและบริการ (หน้าใหม่)            -->
+    <!-- 2.3 หน้า แนะนำคุณภาพสินค้าและบริการ                       -->
     <!-- ========================================================= -->
     <div id="feedback-page" class="w-full max-w-md hidden opacity-0 transition-opacity duration-300 flex flex-col h-[calc(100vh-2rem)] pb-10 bg-white absolute top-0 left-0 z-50">
         
@@ -245,7 +241,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
             </button>
-            <h2 class="ml-3 font-bold text-xl text-gray-800">แนะนำคุณภาพสินค้า</h2>
+            <h2 class="ml-3 font-bold text-xl text-gray-800">แนะนำคุณภาพและบริการ</h2>
         </div>
 
         <div class="flex-1 overflow-y-auto px-4 py-6 hide-scroll relative" id="feedback-scroll-area">
@@ -255,11 +251,12 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <p class="text-gray-500 font-medium">กำลังเตรียมแบบฟอร์ม...</p>
+                <p class="text-gray-500 font-medium">กำลังเตรียมข้อมูล...</p>
             </div>
 
             <div id="feedback-content" class="hidden space-y-8">
                 
+                <!-- แท็บสลับหัวข้อ -->
                 <div>
                     <label class="block text-lg font-bold text-gray-800 mb-3">หัวข้อที่ต้องการแนะนำ</label>
                     <div class="flex bg-gray-100 p-1.5 rounded-2xl">
@@ -274,111 +271,123 @@
 
                 <hr class="border-gray-200">
 
-                <div class="space-y-4">
-                    <div class="flex gap-2">
-                        <button onclick="openQRScanner()" class="flex-1 bg-blue-50 text-blue-800 border-2 border-blue-200 hover:bg-blue-100 font-bold py-4 rounded-2xl transition flex justify-center items-center gap-3 text-lg shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                            </svg>
-                            สแกน QR ป้ายสินค้า
-                        </button>
-                        <button onclick="openTagHelpModal()" class="w-16 bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-gray-200 font-bold text-2xl rounded-2xl flex justify-center items-center shadow-sm">
-                            ?
-                        </button>
-                    </div>
-                    
-                    <!-- โชว์รหัสที่สแกนมา -->
-                    <div id="fb-scanned-qr-display" class="hidden text-center text-sm font-mono bg-green-50 text-green-700 p-2 rounded-lg border border-green-200"></div>
+                <!-- คอนเทนเนอร์: คุณภาพสินค้า -->
+                <div id="fb-product-container" class="space-y-8">
+                    <div class="space-y-4">
+                        <div class="flex gap-2">
+                            <button onclick="openQRScanner()" class="flex-1 bg-blue-50 text-blue-800 border-2 border-blue-200 hover:bg-blue-100 font-bold py-4 rounded-2xl transition flex justify-center items-center gap-3 text-lg shadow-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                                สแกน QR ป้ายสินค้า
+                            </button>
+                            <button onclick="openTagHelpModal()" class="w-16 bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-gray-200 font-bold text-2xl rounded-2xl flex justify-center items-center shadow-sm">?</button>
+                        </div>
+                        <div id="fb-scanned-qr-display" class="hidden text-center text-sm font-mono bg-green-50 text-green-700 p-2 rounded-lg border border-green-200"></div>
 
-                    <div class="flex items-center gap-3">
-                        <div class="h-px bg-gray-300 flex-1"></div>
-                        <span class="text-gray-500 font-medium text-sm">หรือ กรอกข้อมูลด้านล่างหากไม่มีป้าย</span>
-                        <div class="h-px bg-gray-300 flex-1"></div>
-                    </div>
-                </div>
-
-                <div class="space-y-6 bg-gray-50 p-5 rounded-2xl border border-gray-200">
-                    <div>
-                        <label class="block text-lg font-bold text-gray-800 mb-2">ชนิดเส้นไหม</label>
-                        <input type="text" id="fb-silkType" list="list-silk-types" 
-                               class="w-full appearance-none outline-none block bg-white text-gray-800 border-2 border-gray-300 rounded-xl px-4 py-4 text-lg font-medium focus:border-blue-500 focus:ring-0 transition-all"
-                               style="max-width: 100%; box-sizing: border-box;"
-                               placeholder="พิมพ์หรือเลือกชนิดเส้นไหม">
-                        <datalist id="list-silk-types"></datalist>
+                        <div class="flex items-center gap-3">
+                            <div class="h-px bg-gray-300 flex-1"></div>
+                            <span class="text-gray-500 font-medium text-sm">หรือ กรอกข้อมูลด้านล่างหากไม่มีป้าย</span>
+                            <div class="h-px bg-gray-300 flex-1"></div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-lg font-bold text-gray-800 mb-3">เกรด</label>
-                        <div id="fb-grade-container" class="flex flex-wrap gap-3">
+                    <div class="space-y-6 bg-gray-50 p-5 rounded-2xl border border-gray-200">
+                        <div>
+                            <label class="block text-lg font-bold text-gray-800 mb-2">ชนิดเส้นไหม</label>
+                            <input type="text" id="fb-silkType" list="list-silk-types" class="w-full appearance-none outline-none block bg-white text-gray-800 border-2 border-gray-300 rounded-xl px-4 py-4 text-lg font-medium focus:border-blue-500 focus:ring-0 transition-all" style="max-width: 100%; box-sizing: border-box;" placeholder="พิมพ์หรือเลือกชนิดเส้นไหม">
+                            <datalist id="list-silk-types"></datalist>
+                        </div>
+                        <div>
+                            <label class="block text-lg font-bold text-gray-800 mb-3">เกรด</label>
+                            <div id="fb-grade-container" class="flex flex-wrap gap-3"></div>
+                        </div>
+                        <div>
+                            <label class="block text-lg font-bold text-gray-800 mb-2">จำนวน (กิโลกรัม)</label>
+                            <input type="number" step="0.01" id="fb-weight" class="w-full appearance-none outline-none block bg-white text-gray-800 border-2 border-gray-300 rounded-xl px-4 py-4 text-lg font-bold focus:border-blue-500 focus:ring-0 transition-all" style="max-width: 100%; box-sizing: border-box;" placeholder="ตัวอย่าง: 5.5">
+                        </div>
+                        <div>
+                            <label class="block text-lg font-bold text-gray-800 mb-2">วันที่ซื้อ</label>
+                            <input type="date" id="fb-buyDate" class="w-full appearance-none outline-none block bg-white text-gray-800 border-2 border-gray-300 rounded-xl px-4 py-4 text-lg font-medium focus:border-blue-500 focus:ring-0 transition-all" style="max-width: 100%; box-sizing: border-box;">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-lg font-bold text-gray-800 mb-2">จำนวน (กิโลกรัม)</label>
-                        <input type="number" step="0.01" id="fb-weight" 
-                               class="w-full appearance-none outline-none block bg-white text-gray-800 border-2 border-gray-300 rounded-xl px-4 py-4 text-lg font-bold focus:border-blue-500 focus:ring-0 transition-all"
-                               style="max-width: 100%; box-sizing: border-box;"
-                               placeholder="ตัวอย่าง: 5.5">
+                        <label class="block text-lg font-bold text-gray-800 mb-3">ปัญหาที่พบ (เลือกได้มากกว่า 1)</label>
+                        <div id="fb-problems-container" class="grid grid-cols-2 gap-3"></div>
+                        <div id="fb-other-container" class="mt-3 hidden">
+                            <textarea id="fb-other-text" rows="3" class="w-full border-2 border-gray-300 rounded-xl p-4 text-lg bg-white focus:border-blue-500" placeholder="โปรดระบุปัญหาอื่นๆ ที่พบ..."></textarea>
+                        </div>
                     </div>
 
                     <div>
-                        <label class="block text-lg font-bold text-gray-800 mb-2">วันที่ซื้อ</label>
-                        <input type="date" id="fb-buyDate" 
-                               class="w-full appearance-none outline-none block bg-white text-gray-800 border-2 border-gray-300 rounded-xl px-4 py-4 text-lg font-medium focus:border-blue-500 focus:ring-0 transition-all"
-                               style="max-width: 100%; box-sizing: border-box;">
+                        <label class="block text-lg font-bold text-gray-800 mb-2">แนบรูปสินค้าที่มีปัญหา <span class="text-sm font-normal text-gray-500">(สูงสุด 3 รูป)</span></label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-2xl p-6 bg-gray-50 text-center relative hover:bg-gray-100 transition cursor-pointer" onclick="document.getElementById('fb-file-upload').click()">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            <span class="text-gray-600 font-bold text-lg">กดเพื่อเลือกรูปภาพ</span>
+                            <input type="file" id="fb-file-upload" accept="image/*" multiple class="hidden" onchange="handleImagePreview(event)">
+                        </div>
+                        <div id="fb-image-preview" class="flex gap-3 mt-4 overflow-x-auto hide-scroll"></div>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-lg font-bold text-gray-800 mb-3">ปัญหาที่พบ (เลือกได้มากกว่า 1)</label>
-                    <div id="fb-problems-container" class="grid grid-cols-2 gap-3">
-                    </div>
+                <!-- คอนเทนเนอร์: บริการ (ปรับให้เหมาะกับผู้สูงอายุ) -->
+                <div id="fb-service-container" class="space-y-8 hidden">
                     
-                    <div id="fb-other-container" class="mt-3 hidden">
-                        <textarea id="fb-other-text" rows="3" class="w-full border-2 border-gray-300 rounded-xl p-4 text-lg bg-white focus:border-blue-500" placeholder="โปรดระบุปัญหาอื่นๆ ที่พบ..."></textarea>
+                    <div class="space-y-6 bg-gray-50 p-5 rounded-2xl border border-gray-200">
+                        <!-- 1. ชื่อพนักงาน -->
+                        <div>
+                            <label class="block text-lg font-bold text-gray-800 mb-3">พนักงานที่ให้บริการ</label>
+                            <div id="fb-employee-container" class="grid grid-cols-2 gap-4">
+                                <!-- จะโหลดรูปและชื่อพนักงานมาใส่ตรงนี้แบบ Grid ใหญ่ๆ -->
+                            </div>
+                        </div>
+
+                        <!-- 2. วันที่พบปัญหา -->
+                        <div>
+                            <label class="block text-lg font-bold text-gray-800 mb-2">วันที่พบปัญหา</label>
+                            <input type="date" id="fb-svc-date" class="w-full appearance-none outline-none block bg-white text-gray-800 border-2 border-gray-300 rounded-xl px-4 py-4 text-lg font-medium focus:border-blue-500 focus:ring-0 transition-all" style="max-width: 100%; box-sizing: border-box;">
+                        </div>
                     </div>
+
+                    <!-- 3. ปัญหาที่พบ -->
+                    <div>
+                        <label class="block text-lg font-bold text-gray-800 mb-3">ปัญหาที่พบ (เลือกได้มากกว่า 1)</label>
+                        <div id="fb-svc-problems-container" class="grid grid-cols-1 gap-3">
+                            <!-- จะโหลด Checkbox มาใส่ตรงนี้แบบกล่องใหญ่ -->
+                        </div>
+                        <div id="fb-svc-other-container" class="mt-3 hidden">
+                            <textarea id="fb-svc-other-text" rows="3" class="w-full border-2 border-gray-300 rounded-xl p-4 text-lg bg-white focus:border-blue-500" placeholder="โปรดระบุปัญหาอื่นๆ ที่พบ..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 4. คำชื่นชม/กำลังใจ -->
+                    <div>
+                        <label class="block text-lg font-bold text-gray-800 mb-2">คำชื่นชม / กำลังใจ <span class="text-sm font-normal text-gray-500">(ไม่บังคับ)</span></label>
+                        <textarea id="fb-svc-compliment" rows="4" class="w-full border-2 border-gray-300 rounded-xl p-4 text-lg bg-white focus:border-blue-500" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
+                    </div>
+
                 </div>
 
-                <div>
-                    <label class="block text-lg font-bold text-gray-800 mb-2">แนบรูปสินค้าที่มีปัญหา <span class="text-sm font-normal text-gray-500">(สูงสุด 3 รูป)</span></label>
-                    <div class="border-2 border-dashed border-gray-300 rounded-2xl p-6 bg-gray-50 text-center relative hover:bg-gray-100 transition cursor-pointer" onclick="document.getElementById('fb-file-upload').click()">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span class="text-gray-600 font-bold text-lg">กดเพื่อเลือกรูปภาพ</span>
-                        <input type="file" id="fb-file-upload" accept="image/*" multiple class="hidden" onchange="handleImagePreview(event)">
-                    </div>
-                    <div id="fb-image-preview" class="flex gap-3 mt-4 overflow-x-auto hide-scroll"></div>
-                </div>
-
-                <div class="pt-4 pb-8">
+                <!-- ปุ่มบันทึกข้อมูล (ใช้ร่วมกัน) -->
+                <div class="pt-4 pb-8 border-t border-gray-200">
                     <button onclick="submitFeedback()" class="w-full bg-blue-800 text-white font-bold py-4 text-xl rounded-2xl shadow-lg hover:bg-blue-900 transition-colors">
                         บันทึกข้อมูล
                     </button>
                 </div>
+
             </div>
         </div>
     </div>
 
+    <!-- Modal ต่างๆ ยังอยู่ครบ (QR Scanner, Help, Detail, etc.) -->
     <!-- Modal สำหรับแสดงกล้องสแกน QR -->
     <div id="qr-scanner-modal" class="fixed inset-0 z-[60] hidden flex flex-col bg-black">
         <div class="px-4 py-4 flex items-center justify-between bg-gray-900 text-white">
             <h2 class="font-bold text-lg">สแกนป้ายสินค้า</h2>
-            <button onclick="closeQRScanner()" class="text-gray-300 hover:text-white p-2 bg-gray-800 rounded-full">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+            <button onclick="closeQRScanner()" class="text-gray-300 hover:text-white p-2 bg-gray-800 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
         <div class="flex-1 flex items-center justify-center relative">
             <div id="qr-reader" class="w-full max-w-sm"></div>
-            <div id="qr-processing" class="absolute inset-0 bg-black bg-opacity-70 hidden flex-col items-center justify-center text-white z-10">
-                <svg class="animate-spin h-12 w-12 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p class="font-bold text-lg">กำลังตรวจสอบข้อมูล...</p>
-            </div>
+            <div id="qr-processing" class="absolute inset-0 bg-black bg-opacity-70 hidden flex-col items-center justify-center text-white z-10"><svg class="animate-spin h-12 w-12 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="font-bold text-lg">กำลังตรวจสอบข้อมูล...</p></div>
         </div>
     </div>
 
@@ -387,43 +396,27 @@
         <div class="bg-white rounded-2xl w-11/12 max-w-md shadow-2xl overflow-hidden relative">
             <div class="px-4 py-3 border-b flex justify-between items-center bg-gray-50">
                 <h3 class="font-bold text-lg text-gray-800">ตัวอย่างป้ายสินค้า</h3>
-                <button onclick="closeTagHelpModal()" class="text-gray-500 hover:text-gray-900 bg-gray-200 rounded-full p-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+                <button onclick="closeTagHelpModal()" class="text-gray-500 hover:text-gray-900 bg-gray-200 rounded-full p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
-            <div class="p-4 bg-gray-200 flex justify-center">
-                <img src="https://drive.google.com/thumbnail?id=1mqBzzmA7Ov-OFfvk2lwaFtSzWmKtqc61&sz=w800" alt="ตัวอย่างป้าย" class="w-full max-h-[60vh] object-contain rounded-lg shadow-sm">
-            </div>
-            <div class="p-4 text-center">
-                <button onclick="closeTagHelpModal()" class="w-full bg-blue-800 text-white font-bold py-3 rounded-xl text-lg">เข้าใจแล้ว</button>
-            </div>
+            <div class="p-4 bg-gray-200 flex justify-center"><img src="https://drive.google.com/thumbnail?id=1mqBzzmA7Ov-OFfvk2lwaFtSzWmKtqc61&sz=w800" alt="ตัวอย่างป้าย" class="w-full max-h-[60vh] object-contain rounded-lg shadow-sm"></div>
+            <div class="p-4 text-center"><button onclick="closeTagHelpModal()" class="w-full bg-blue-800 text-white font-bold py-3 rounded-xl text-lg">เข้าใจแล้ว</button></div>
         </div>
     </div>
 
     <!-- 3. Modal QR Code หลัก (รับแต้ม) -->
     <div id="qr-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-70 transition-opacity">
         <div class="bg-white rounded-3xl p-8 w-11/12 max-w-sm text-center shadow-2xl relative">
-            <button onclick="closeQRModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+            <button onclick="closeQRModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
             <h3 class="text-xl font-bold text-blue-900 mb-6">คิวอาร์โคดเพื่อรับแต้ม</h3>
-            <div class="flex justify-center mb-6">
-                <div id="qrcode" class="p-4 bg-white rounded-xl shadow-inner border-2 border-gray-100"></div>
-            </div>
-            <p class="text-sm text-gray-600 bg-gray-100 p-3 rounded-lg font-medium">
-            แสดงคิวอาร์โคดนี้ให้กับพนักงานขายเพื่อรับแต้ม
-            </p>
+            <div class="flex justify-center mb-6"><div id="qrcode" class="p-4 bg-white rounded-xl shadow-inner border-2 border-gray-100"></div></div>
+            <p class="text-sm text-gray-600 bg-gray-100 p-3 rounded-lg font-medium">แสดงคิวอาร์โคดนี้ให้กับพนักงานขายเพื่อรับแต้ม</p>
         </div>
     </div>
 
     <!-- 3.1 หน้าต่างรายละเอียดของรางวัล (แลกแต้ม) -->
     <div id="reward-detail-modal" class="fixed inset-0 z-50 hidden bg-white flex flex-col transition-transform transform translate-x-full duration-300 max-w-md mx-auto shadow-2xl">
         <div class="px-4 py-3 flex items-center border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm">
-            <button onclick="closeRewardDetail()" class="text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-            </button>
+            <button onclick="closeRewardDetail()" class="text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
             <h2 class="ml-2 font-bold text-lg text-gray-800">รายละเอียดของรางวัล</h2>
         </div>
         <div class="flex-1 overflow-y-auto pb-24 hide-scroll">
@@ -433,9 +426,7 @@
                 <div class="flex items-center justify-between bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4">
                     <div>
                         <p class="text-xs text-blue-600 font-bold mb-1">แต้มที่ใช้ (ต่อ 1 สิทธิ์)</p>
-                        <div class="flex items-center text-blue-800 font-bold text-lg">
-                            <span id="detail-unit-points"></span>
-                        </div>
+                        <div class="flex items-center text-blue-800 font-bold text-lg"><span id="detail-unit-points"></span></div>
                     </div>
                     <div class="flex items-center gap-3 bg-white px-3 py-2 rounded-lg shadow-sm border border-blue-100">
                         <button onclick="changeQuantity(-1)" class="w-8 h-8 rounded-full bg-gray-50 text-gray-600 font-bold text-xl">−</button>
@@ -444,8 +435,7 @@
                     </div>
                 </div>
                 <div class="flex justify-between items-center mb-6 px-1">
-                    <span class="font-bold text-gray-700">แต้มรวมที่ต้องใช้:</span>
-                    <span id="detail-total-points" class="font-bold text-xl text-blue-800">0</span>
+                    <span class="font-bold text-gray-700">แต้มรวมที่ต้องใช้:</span><span id="detail-total-points" class="font-bold text-xl text-blue-800">0</span>
                 </div>
                 <h4 class="font-bold text-gray-800 mb-2">เงื่อนไขการแลก</h4>
                 <p id="detail-condition" class="text-gray-600 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100"></p>
@@ -459,9 +449,7 @@
     <!-- 3.2 ป๊อปอัพยืนยันการแลก -->
     <div id="confirm-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black bg-opacity-60 transition-opacity">
         <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm text-center shadow-2xl relative transform scale-100">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
             <h3 class="text-xl font-bold text-gray-900 mb-2">ยืนยันการแลกของรางวัล</h3>
             <p id="confirm-text" class="text-sm text-gray-500 mb-6 leading-relaxed"></p>
             <div class="flex gap-3">
@@ -572,13 +560,16 @@
         // ========================================================
         // ⚙️ ตั้งค่าลิงก์เชื่อมต่อฐานข้อมูล GAS (API)
         // ========================================================
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxudc6mwJ6dfwC7e3oCOrPCHEFclFA1uYzHewTtgMt4MHfHIsUD1kJCDHSmmRQUJeW8-w/exec";
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxC3delh0fmVVI69OfVR4eAGwIzjbY7moJiOVm6jtM4oZpOaR6Xh4gRNzGdGrrLvXP3/exec";
         // ========================================================
 
         // --------------------------------------------------------
         // ตัวแปรส่วน Feedback / แนะนำบริการ
         // --------------------------------------------------------
         let isFeedbackFormLoaded = false;
+        let isServiceFormLoaded = false;
+        let currentFeedbackTab = 'product';
+
         let html5QrCode = null;
         let isProcessingQR = false; 
         const problemList = [
@@ -586,8 +577,12 @@
             "เส้นไหม แบน", "เส้นไหม เปื้อน (สี, น้ำมัน)", "เส้นไหม เป็นขน", 
             "เส้นไหม ด่าง", "เส้นไหม กรอยาก", "หัวม้วน เอียง", "อื่นๆ"
         ];
+        const serviceProblemList = [
+            "ใช้ถ้อยคำไม่สุภาพ ไม่ยิ้มแย้ม", "ให้ข้อมูลคุณสมบัติสินค้าไม่ครบถ้วน", 
+            "แก้ไขปัญหา/ตอบคำถามล่าช้า", "ติดต่อยาก", "อื่นๆ"
+        ];
         let uploadedImages = [];
-        let scannedQRCodeData = ""; // ตัวแปรเก็บข้อมูล QR Code ที่สแกนมาได้
+        let scannedQRCodeData = ""; 
 
         // ตัวแปรระบบเดิม
         let currentUser = null;
@@ -612,13 +607,12 @@
         // แจ้งเตือนพื้นฐาน
         function showMsg(title, text) {
             document.getElementById('msg-title').innerText = title;
-            // กรณีส่ง HTML มาให้เรนเดอร์ในกล่องแจ้งเตือนได้เลย
             if(text.includes('<') && text.includes('>')) {
                 document.getElementById('msg-text').innerHTML = text;
             } else {
                 document.getElementById('msg-text').innerText = text;
             }
-            document.getElementById('msg-btn').classList.remove('hidden'); // แสดงปุ่มปกติ
+            document.getElementById('msg-btn').classList.remove('hidden'); 
             document.getElementById('msg-modal').classList.remove('hidden');
         }
         function closeMsg() { document.getElementById('msg-modal').classList.add('hidden'); }
@@ -628,17 +622,28 @@
         // ========================================================
 
         function setFeedbackType(type) {
-            if (type === 'service') {
-                showMsg('เร็วๆ นี้', 'ระบบรับข้อเสนอแนะด้านบริการกำลังอยู่ระหว่างการพัฒนา');
-                return; 
-            }
+            currentFeedbackTab = type;
             
-            document.getElementById('fb-tab-product').className = "flex-1 py-3 text-lg font-bold rounded-xl bg-white shadow-sm text-blue-800 border-2 border-blue-100 transition-all";
-            document.getElementById('fb-tab-service').className = "flex-1 py-3 text-lg font-bold rounded-xl text-gray-500 border-2 border-transparent transition-all";
+            if (type === 'product') {
+                document.getElementById('fb-tab-product').className = "flex-1 py-3 text-lg font-bold rounded-xl bg-white shadow-sm text-blue-800 border-2 border-blue-100 transition-all";
+                document.getElementById('fb-tab-service').className = "flex-1 py-3 text-lg font-bold rounded-xl text-gray-500 border-2 border-transparent transition-all";
+                
+                document.getElementById('fb-product-container').classList.remove('hidden');
+                document.getElementById('fb-service-container').classList.add('hidden');
+                
+                if (!isFeedbackFormLoaded) initFeedbackForm();
+            } else {
+                document.getElementById('fb-tab-product').className = "flex-1 py-3 text-lg font-bold rounded-xl text-gray-500 border-2 border-transparent transition-all";
+                document.getElementById('fb-tab-service').className = "flex-1 py-3 text-lg font-bold rounded-xl bg-white shadow-sm text-blue-800 border-2 border-blue-100 transition-all";
+                
+                document.getElementById('fb-product-container').classList.add('hidden');
+                document.getElementById('fb-service-container').classList.remove('hidden');
+                
+                if (!isServiceFormLoaded) initServiceForm();
+            }
         }
 
         function initFeedbackForm() {
-            // ป้องกันการค้างโดยเปิดโหลดใหม่ และซ่อนคอนเทนต์ไว้ก่อนเสมอเมื่อเริ่มเรียก
             document.getElementById('feedback-loading').classList.remove('hidden');
             document.getElementById('feedback-content').classList.add('hidden');
             
@@ -693,8 +698,68 @@
             })
             .catch(err => {
                 document.getElementById('feedback-loading').classList.add('hidden');
-                showMsg('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลฟอร์มได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต\n\nรายละเอียด: ' + err.message);
+                showMsg('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลฟอร์มได้\n' + err.message);
                 switchTab('menu'); 
+            });
+        }
+
+        // โหลดข้อมูลแบบฟอร์มด้านบริการ (รายชื่อพนักงาน)
+        function initServiceForm() {
+            document.getElementById('feedback-loading').classList.remove('hidden');
+            document.getElementById('feedback-content').classList.add('hidden');
+
+            callGasApi('getEmployeeList', {})
+            .then(res => {
+                document.getElementById('feedback-loading').classList.add('hidden');
+                document.getElementById('feedback-content').classList.remove('hidden');
+                
+                if (res.success) {
+                    // เรนเดอร์พนักงาน (ปรับเป็น Grid ใหญ่ขึ้นเพื่อให้ผู้สูงอายุกดง่าย มีรูปรองรับกรณีโหลดไม่ขึ้น)
+                    const empCont = document.getElementById('fb-employee-container');
+                    empCont.innerHTML = '';
+                    res.employees.forEach(emp => {
+                        const defaultAvatar = "https://placehold.co/200x200/e2e8f0/64748b?text=%F0%9F%91%A4";
+                        const html = `
+                        <label class="cursor-pointer w-full">
+                            <input type="radio" name="fb-employee" value="${emp.id}" class="peer sr-only">
+                            <div class="rounded-xl border-2 border-gray-300 p-4 text-center transition-all bg-white shadow-sm peer-checked:border-blue-800 peer-checked:bg-blue-50 h-full flex flex-col items-center justify-start">
+                                <img src="${emp.image}" class="w-20 h-20 rounded-full mx-auto object-cover mb-3 border-2 border-gray-100 bg-gray-100" onerror="this.onerror=null; this.src='${defaultAvatar}'">
+                                <p class="text-[16px] font-bold text-gray-800 line-clamp-2 leading-tight w-full">${emp.name}</p>
+                            </div>
+                        </label>
+                        `;
+                        empCont.insertAdjacentHTML('beforeend', html);
+                    });
+
+                    // เรนเดอร์ Checkbox ปัญหาบริการ (ปรับขนาดปุ่มให้ใหญ่ขึ้น)
+                    const probCont = document.getElementById('fb-svc-problems-container');
+                    probCont.innerHTML = '';
+                    serviceProblemList.forEach((p, idx) => {
+                        const isOther = p === "อื่นๆ";
+                        const id = isOther ? "chk-svc-prob-other" : `chk-svc-prob-${idx}`;
+                        const onchangeStr = isOther ? `onchange="document.getElementById('fb-svc-other-container').classList.toggle('hidden', !this.checked)"` : "";
+                        
+                        const html = `
+                        <label class="cursor-pointer block">
+                            <input type="checkbox" id="${id}" value="${p}" class="svc-problem-checkbox peer sr-only" ${onchangeStr}>
+                            <div class="rounded-xl border-2 border-gray-300 px-5 py-4 w-full flex items-center justify-start transition-all font-bold text-lg text-gray-700 bg-white shadow-sm peer-checked:bg-blue-800 peer-checked:border-blue-800 peer-checked:text-white">
+                                ${p}
+                            </div>
+                        </label>`;
+                        probCont.insertAdjacentHTML('beforeend', html);
+                    });
+
+                    isServiceFormLoaded = true;
+                } else {
+                    showMsg('โหลดข้อมูลพนักงานไม่สำเร็จ', res.message);
+                    setFeedbackType('product');
+                }
+            })
+            .catch(err => {
+                document.getElementById('feedback-loading').classList.add('hidden');
+                document.getElementById('feedback-content').classList.remove('hidden');
+                showMsg('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลพนักงานได้');
+                setFeedbackType('product');
             });
         }
 
@@ -715,7 +780,6 @@
                     
                     try { html5QrCode.stop().catch(e => console.log(e)); } catch(e) {}
                     
-                    // บันทึกค่ารหัสที่อ่านได้ลงตัวแปร
                     scannedQRCodeData = decodedText;
                     
                     callGasApi('decodeProductQR', { qrText: decodedText })
@@ -728,7 +792,6 @@
                                 if(r.value === res.grade) r.checked = true;
                             });
                             
-                            // โชว์รหัส QR ที่หน้าจอ
                             const qrDisplay = document.getElementById('fb-scanned-qr-display');
                             qrDisplay.innerText = "รหัสป้าย: " + decodedText;
                             qrDisplay.classList.remove('hidden');
@@ -803,121 +866,179 @@
             renderImagePreviews();
         }
 
-        // ฟังก์ชันใหม่: ส่งข้อมูลฟอร์มและรูปภาพไปยัง GAS
+        // ฟังก์ชันส่งข้อมูลฟอร์ม
         async function submitFeedback() {
             if (!currentUser) return;
             
-            // 1. ดึงข้อมูลจากฟอร์ม
-            const silkType = document.getElementById('fb-silkType').value.trim();
-            const gradeRadio = document.querySelector('input[name="fb-grade"]:checked');
-            const grade = gradeRadio ? gradeRadio.value : "";
-            const weight = document.getElementById('fb-weight').value.trim();
-            const buyDate = document.getElementById('fb-buyDate').value; 
-            
-            // รวบรวมปัญหาที่พบ
-            const problemChecks = document.querySelectorAll('.problem-checkbox:checked');
-            let problems = [];
-            let hasOther = false;
-            problemChecks.forEach(chk => {
-                if (chk.value === "อื่นๆ") {
-                    hasOther = true;
-                } else {
-                    problems.push(chk.value);
-                }
-            });
-            if (hasOther) {
-                const otherText = document.getElementById('fb-other-text').value.trim();
-                if (otherText) problems.push("อื่นๆ: " + otherText);
-                else problems.push("อื่นๆ");
-            }
-            const problemsStr = problems.join('*');
-            
-            // Validate อย่างน้อยต้องมีข้อมูล 1 อย่าง
-            if (!silkType && !grade && !weight && !problemsStr) {
-                showMsg('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลอย่างน้อยหนึ่งช่องเพื่อส่งคำแนะนำ');
-                return;
-            }
-
-            // 2. แสดง UI กำลังโหลด (ซ่อนปุ่มตกลง)
-            document.getElementById('msg-title').innerText = 'กำลังบันทึกข้อมูล...';
-            document.getElementById('msg-text').innerHTML = `
-                <div class="flex flex-col items-center justify-center py-4">
-                    <svg class="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p class="text-sm font-bold text-blue-800">กำลังอัปโหลดข้อมูลและรูปภาพ</p>
-                    <p class="text-xs text-gray-500 mt-1">กรุณารอสักครู่ (อาจใช้เวลา 10-30 วินาที)</p>
-                </div>`;
-            document.getElementById('msg-btn').classList.add('hidden'); // ซ่อนปุ่ม
-            document.getElementById('msg-modal').classList.remove('hidden');
-
-            try {
-                // 3. แปลงไฟล์รูปภาพเป็น Base64
-                const base64Images = await Promise.all(uploadedImages.map(file => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve({
-                            mimeType: file.type,
-                            data: reader.result.split(',')[1],
-                            filename: file.name
-                        });
-                        reader.onerror = error => reject(error);
-                        reader.readAsDataURL(file);
-                    });
-                }));
-
-                // 4. ส่งไป API
-                const payload = {
-                    customerId: currentUser.customerId,
-                    qrCode: scannedQRCodeData,
-                    silkType: silkType,
-                    grade: grade,
-                    weight: weight,
-                    buyDate: buyDate,
-                    problems: problemsStr,
-                    images: base64Images
-                };
-
-                const res = await callGasApi('submitProductFeedback', payload);
+            if (currentFeedbackTab === 'product') {
+                // --- ส่วนส่งข้อมูลคุณภาพสินค้า ---
+                const silkType = document.getElementById('fb-silkType').value.trim();
+                const gradeRadio = document.querySelector('input[name="fb-grade"]:checked');
+                const grade = gradeRadio ? gradeRadio.value : "";
+                const weight = document.getElementById('fb-weight').value.trim();
+                const buyDate = document.getElementById('fb-buyDate').value; 
                 
-                if (res.success) {
-                    showMsg('สำเร็จ', 'บันทึกข้อมูลคำแนะนำของคุณเรียบร้อยแล้ว ขอบคุณที่ร่วมพัฒนาคุณภาพสินค้าของเราครับ');
-                    resetFeedbackForm();
-                    // เปลี่ยนกลับหน้าเมนูเมื่อกดตกลง (จัดการด้วย delay เล็กน้อยให้ user อ่านทัน)
-                    setTimeout(() => {
-                        const btn = document.getElementById('msg-btn');
-                        const oldOnclick = btn.onclick;
-                        btn.onclick = function() {
-                            closeMsg();
-                            switchTab('menu');
-                            btn.onclick = oldOnclick; // คืนค่า onclick เดิม
-                        };
-                    }, 100);
-                } else {
-                    showMsg('เกิดข้อผิดพลาด', res.message);
+                const problemChecks = document.querySelectorAll('.problem-checkbox:checked');
+                let problems = [];
+                let hasOther = false;
+                problemChecks.forEach(chk => {
+                    if (chk.value === "อื่นๆ") hasOther = true;
+                    else problems.push(chk.value);
+                });
+                if (hasOther) {
+                    const otherText = document.getElementById('fb-other-text').value.trim();
+                    if (otherText) problems.push("อื่นๆ: " + otherText);
+                    else problems.push("อื่นๆ");
                 }
-            } catch (err) {
-                showMsg('เกิดข้อผิดพลาด', 'การเชื่อมต่อขัดข้อง: ' + err.message);
+                const problemsStr = problems.join('*');
+                
+                if (!silkType && !grade && !weight && !problemsStr) {
+                    showMsg('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลอย่างน้อยหนึ่งช่องเพื่อส่งคำแนะนำ');
+                    return;
+                }
+
+                document.getElementById('msg-title').innerText = 'กำลังบันทึกข้อมูล...';
+                document.getElementById('msg-text').innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-4">
+                        <svg class="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <p class="text-sm font-bold text-blue-800">กำลังอัปโหลดข้อมูลและรูปภาพ</p>
+                        <p class="text-xs text-gray-500 mt-1">กรุณารอสักครู่</p>
+                    </div>`;
+                document.getElementById('msg-btn').classList.add('hidden');
+                document.getElementById('msg-modal').classList.remove('hidden');
+
+                try {
+                    const base64Images = await Promise.all(uploadedImages.map(file => {
+                        return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve({ mimeType: file.type, data: reader.result.split(',')[1], filename: file.name });
+                            reader.onerror = error => reject(error);
+                            reader.readAsDataURL(file);
+                        });
+                    }));
+
+                    const payload = {
+                        customerId: currentUser.customerId,
+                        qrCode: scannedQRCodeData,
+                        silkType: silkType,
+                        grade: grade,
+                        weight: weight,
+                        buyDate: buyDate,
+                        problems: problemsStr,
+                        images: base64Images
+                    };
+
+                    const res = await callGasApi('submitProductFeedback', payload);
+                    
+                    if (res.success) {
+                        showMsg('สำเร็จ', 'บันทึกข้อมูลคำแนะนำคุณภาพสินค้าเรียบร้อยแล้ว ขอบคุณครับ');
+                        resetFeedbackForm();
+                        setTimeout(() => {
+                            const btn = document.getElementById('msg-btn');
+                            const oldOnclick = btn.onclick;
+                            btn.onclick = function() {
+                                closeMsg(); switchTab('menu'); btn.onclick = oldOnclick;
+                            };
+                        }, 100);
+                    } else {
+                        showMsg('เกิดข้อผิดพลาด', res.message);
+                    }
+                } catch (err) {
+                    showMsg('เกิดข้อผิดพลาด', 'การเชื่อมต่อขัดข้อง: ' + err.message);
+                }
+
+            } else if (currentFeedbackTab === 'service') {
+                // --- ส่วนส่งข้อมูลด้านบริการ ---
+                const empRadio = document.querySelector('input[name="fb-employee"]:checked');
+                const empId = empRadio ? empRadio.value : "";
+                const incidentDate = document.getElementById('fb-svc-date').value;
+                const compliment = document.getElementById('fb-svc-compliment').value.trim();
+
+                const problemChecks = document.querySelectorAll('.svc-problem-checkbox:checked');
+                let problems = [];
+                let hasOther = false;
+                problemChecks.forEach(chk => {
+                    if (chk.value === "อื่นๆ") hasOther = true;
+                    else problems.push(chk.value);
+                });
+                if (hasOther) {
+                    const otherText = document.getElementById('fb-svc-other-text').value.trim();
+                    if (otherText) problems.push("อื่นๆ: " + otherText);
+                    else problems.push("อื่นๆ");
+                }
+                const problemsStr = problems.join('*');
+
+                if (!empId) {
+                    showMsg('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกพนักงานที่ให้บริการ');
+                    return;
+                }
+
+                if (!problemsStr && !compliment) {
+                    showMsg('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุปัญหาที่พบ หรือ พิมพ์คำชื่นชม/กำลังใจ');
+                    return;
+                }
+
+                document.getElementById('msg-title').innerText = 'กำลังบันทึกข้อมูล...';
+                document.getElementById('msg-text').innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-4">
+                        <svg class="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <p class="text-sm font-bold text-blue-800">กำลังบันทึกข้อมูลบริการ</p>
+                    </div>`;
+                document.getElementById('msg-btn').classList.add('hidden');
+                document.getElementById('msg-modal').classList.remove('hidden');
+
+                try {
+                    const payload = {
+                        customerId: currentUser.customerId,
+                        empId: empId,
+                        incidentDate: incidentDate,
+                        problems: problemsStr,
+                        compliment: compliment
+                    };
+
+                    const res = await callGasApi('submitServiceFeedback', payload);
+
+                    if (res.success) {
+                        showMsg('สำเร็จ', 'บันทึกข้อมูลข้อเสนอแนะด้านบริการเรียบร้อยแล้ว ขอบคุณครับ');
+                        resetFeedbackForm();
+                        setTimeout(() => {
+                            const btn = document.getElementById('msg-btn');
+                            const oldOnclick = btn.onclick;
+                            btn.onclick = function() {
+                                closeMsg(); switchTab('menu'); btn.onclick = oldOnclick;
+                            };
+                        }, 100);
+                    } else {
+                        showMsg('เกิดข้อผิดพลาด', res.message);
+                    }
+                } catch (err) {
+                    showMsg('เกิดข้อผิดพลาด', 'การเชื่อมต่อขัดข้อง: ' + err.message);
+                }
             }
         }
 
         function resetFeedbackForm() {
+            // เคลียร์ค่าสินค้า
             scannedQRCodeData = "";
             document.getElementById('fb-scanned-qr-display').classList.add('hidden');
             document.getElementById('fb-scanned-qr-display').innerText = '';
-            
             document.getElementById('fb-silkType').value = '';
             document.querySelectorAll('input[name="fb-grade"]').forEach(r => r.checked = false);
             document.getElementById('fb-weight').value = '';
             document.getElementById('fb-buyDate').value = '';
-            
             document.querySelectorAll('.problem-checkbox').forEach(c => c.checked = false);
             document.getElementById('fb-other-container').classList.add('hidden');
             document.getElementById('fb-other-text').value = '';
-            
             uploadedImages = [];
             renderImagePreviews();
+
+            // เคลียร์ค่าบริการ
+            document.querySelectorAll('input[name="fb-employee"]').forEach(r => r.checked = false);
+            document.getElementById('fb-svc-date').value = '';
+            document.querySelectorAll('.svc-problem-checkbox').forEach(c => c.checked = false);
+            document.getElementById('fb-svc-other-container').classList.add('hidden');
+            document.getElementById('fb-svc-other-text').value = '';
+            document.getElementById('fb-svc-compliment').value = '';
         }
 
         // ========================================================
@@ -930,7 +1051,8 @@
             if (tab === 'feedback') {
                 feedbackPage.classList.remove('hidden');
                 setTimeout(() => { feedbackPage.classList.remove('opacity-0'); }, 10);
-                if (!isFeedbackFormLoaded) initFeedbackForm();
+                if (currentFeedbackTab === 'product' && !isFeedbackFormLoaded) initFeedbackForm();
+                else if (currentFeedbackTab === 'service' && !isServiceFormLoaded) initServiceForm();
                 return; 
             } else {
                 feedbackPage.classList.add('opacity-0');
@@ -1432,8 +1554,6 @@
             });
             setTimeout(() => { document.getElementById('login-section').classList.remove('hidden'); }, 400);
         }
-
-        function showComingSoon() { showMsg('แนะนำคุณภาพสินค้าและบริการ', 'เร็วๆ นี้'); }
 
         function openChangePwdModal() { document.getElementById('disp-old-pwd').innerText = savedPassword; document.getElementById('inputNewPwd').value = ''; document.getElementById('change-pwd-modal').classList.remove('hidden'); setTimeout(() => { document.getElementById('change-pwd-modal').classList.remove('translate-x-full'); }, 10); }
         function closeChangePwdModal() { document.getElementById('change-pwd-modal').classList.add('translate-x-full'); setTimeout(() => { document.getElementById('change-pwd-modal').classList.add('hidden'); }, 300); }
