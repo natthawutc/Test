@@ -45,6 +45,15 @@
             border-color: #1e3a8a;
             color: white;
         }
+        /* ซ่อนปุ่มลูกศรในช่อง input type="number" */
+        .hide-spin-button::-webkit-inner-spin-button,
+        .hide-spin-button::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .hide-spin-button {
+            -moz-appearance: textfield;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start pt-8 px-4 pb-24">
@@ -428,11 +437,14 @@
                         <p class="text-xs text-blue-600 font-bold mb-1">แต้มที่ใช้ (ต่อ 1 สิทธิ์)</p>
                         <div class="flex items-center text-blue-800 font-bold text-lg"><span id="detail-unit-points"></span></div>
                     </div>
-                    <div class="flex items-center gap-3 bg-white px-3 py-2 rounded-lg shadow-sm border border-blue-100">
-                        <button onclick="changeQuantity(-1)" class="w-8 h-8 rounded-full bg-gray-50 text-gray-600 font-bold text-xl">−</button>
-                        <span id="detail-quantity" class="font-bold text-lg w-6 text-center text-gray-800">1</span>
-                        <button onclick="changeQuantity(1)" class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-xl">+</button>
+                    
+                    <!-- เปลี่ยนช่องแสดงจำนวนให้สามารถพิมพ์ระบุตัวเลขได้ -->
+                    <div class="flex items-center gap-2 bg-white px-2 py-2 rounded-lg shadow-sm border border-blue-100">
+                        <button onclick="changeQuantity(-1)" class="w-8 h-8 rounded-full bg-gray-50 text-gray-600 font-bold text-xl hover:bg-gray-200 transition-colors">−</button>
+                        <input type="number" id="detail-quantity" value="1" min="1" onchange="updateQuantityFromInput()" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="font-bold text-lg w-12 text-center text-gray-800 bg-transparent border-none p-0 focus:ring-0 focus:outline-none hide-spin-button">
+                        <button onclick="changeQuantity(1)" class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-xl hover:bg-blue-200 transition-colors">+</button>
                     </div>
+
                 </div>
                 <div class="flex justify-between items-center mb-6 px-1">
                     <span class="font-bold text-gray-700">แต้มรวมที่ต้องใช้:</span><span id="detail-total-points" class="font-bold text-xl text-blue-800">0</span>
@@ -1430,20 +1442,47 @@
             setTimeout(() => { modal.classList.remove('translate-x-full'); }, 10);
         }
 
+        // --- เพิ่มฟังก์ชันใหม่ จัดการเมื่อมีการพิมพ์ตัวเลขเอง ---
+        function updateQuantityFromInput() {
+            let val = parseInt(document.getElementById('detail-quantity').value);
+            if (isNaN(val) || val < 1) val = 1;
+            validateAndSetQuantity(val);
+        }
+
+        // --- ปรับปรุงฟังก์ชันเดิม ให้นำค่ามาตรวจสอบ ---
         function changeQuantity(delta) {
             let newQ = currentRedeemQuantity + delta;
-            if (newQ >= 1 && newQ <= currentRedeemMax) {
-                const reward = availableRewardsList[selectedRewardIndex];
-                if ((newQ * Number(reward.points)) > Number(currentUser.points)) { showMsg('แต้มไม่พอ', 'แต้มสะสมของคุณไม่เพียงพอสำหรับการเพิ่มจำนวนสิทธิ์นี้'); return; }
-                currentRedeemQuantity = newQ;
-                updateQuantityDisplay();
-            } else if (newQ > currentRedeemMax) { showMsg('เกินจำนวนคงเหลือ', 'ของรางวัลชิ้นนี้มีจำนวนจำกัดเหลือเพียง ' + currentRedeemMax + ' ชิ้น'); }
+            validateAndSetQuantity(newQ);
+        }
+
+        function validateAndSetQuantity(newQ) {
+            if (selectedRewardIndex === null) return;
+            const reward = availableRewardsList[selectedRewardIndex];
+            
+            // ตรวจสอบกับจำนวนคงเหลือ
+            if (newQ > currentRedeemMax) { 
+                showMsg('เกินจำนวนคงเหลือ', 'ของรางวัลชิ้นนี้มีจำนวนจำกัดเหลือเพียง ' + currentRedeemMax + ' ชิ้น'); 
+                newQ = currentRedeemMax;
+            }
+            
+            // ตรวจสอบแต้มว่าพอหรือไม่
+            if ((newQ * Number(reward.points)) > Number(currentUser.points)) { 
+                showMsg('แต้มไม่พอ', 'แต้มสะสมของคุณไม่เพียงพอสำหรับการเพิ่มจำนวนสิทธิ์นี้'); 
+                let maxByPts = Math.floor(Number(currentUser.points) / Number(reward.points));
+                newQ = maxByPts < 1 ? 1 : maxByPts; // ป้องกันเป็น 0 ให้กลับเป็น 1 เพื่อแสดงผล แต่จะกดยืนยันแลกไม่ได้
+            }
+            
+            if (newQ < 1) newQ = 1;
+            
+            currentRedeemQuantity = newQ;
+            updateQuantityDisplay();
         }
 
         function updateQuantityDisplay() {
-            document.getElementById('detail-quantity').innerText = currentRedeemQuantity;
+            document.getElementById('detail-quantity').value = currentRedeemQuantity;
             document.getElementById('detail-total-points').innerText = (currentRedeemQuantity * Number(availableRewardsList[selectedRewardIndex].points)).toLocaleString() + " แต้ม";
         }
+        // --------------------------------------------------
 
         function closeRewardDetail() {
             const modal = document.getElementById('reward-detail-modal');
